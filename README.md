@@ -20,6 +20,9 @@ in the list, and click _run_.
 
 ![Add-ins window](docs/images/addins_list_snap_generator.png)
 
+It should now appear in the SOLID tab.
+![Position](docs/images/position_in_workspace.png)
+
 Usage
 ----
 There are two snap features currently available (with a few more planned).
