@@ -299,10 +299,10 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         },
         "gap_profiles": {
             "default": {
-                "gap_thickness": 0.005,
-                "gap_length": 0.005,
-                "gap_extrusion": 0.005,
-                "extra_length": 0.02
+                "gap_thickness": 0.015,
+                "gap_length": 0.015,
+                "gap_extrusion": 0.015,
+                "extra_length": 0.06
             }
         }
     }

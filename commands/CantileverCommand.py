@@ -231,7 +231,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
                 "thickness": 0.3,
                 "length": 1.2,
                 "extrusion_distance": 0.6,
-                "strain": 0.0225,
+                "strain": 0.02,
                 "nose_angle": 70
             }
         },
@@ -240,7 +240,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
                 "gap_thickness": 0.015,
                 "gap_length": 0.015,
                 "gap_extrusion": 0.015,
-                "extra_length": 0.05
+                "extra_length": 0.06
             }
         }
     }
