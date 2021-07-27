@@ -7,14 +7,16 @@ user input.
 
 Installation
 ----
-Download the newest release, then paste it into the add-ins folder that belongs
-to Fusion 360. On Windows, it's located at 
-%appdata%\Autodesk\Autodesk Fusion 360\API\AddIns
+Download the newest release and unzip it. Then paste the unizzped folder into 
+the Fusion 360 add-ins folder. On Windows, it's located at 
+
+__%appdata%\Autodesk\Autodesk Fusion 360\API\AddIns__
 
 On Mac, it's at
-~/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns
 
-After that, while in the DESIGN workspace, go to the TOOLS tab and click
+__~/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns__
+
+While in the DESIGN workspace, go to the TOOLS tab and click
 ADD-INS. In the window that pops up, click the Add-Ins tab, find the name
 in the list, and click _run_.
 
