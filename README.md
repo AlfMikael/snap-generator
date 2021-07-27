@@ -101,7 +101,3 @@ SIZE doesn't follow to any actual standards, but works like this:
 
 Parameters:
 ![parameter_meanings](docs/images/cantileverPin_drawing.png)
-
-
-Compatibility
--------------
