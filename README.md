@@ -7,8 +7,9 @@ user input.
 
 Installation
 ----
-Download the newest release and unzip it. Then paste the unizipped folder into 
-the Fusion 360 add-ins folder. On Windows, it's located at 
+Cick _releases_ on the right side, and download the most recent one. Unzip
+and paste the unizipped folder into the Fusion 360 add-ins folder. 
+On Windows, it's located at
 
 __%appdata%\Autodesk\Autodesk Fusion 360\API\AddIns__
 
