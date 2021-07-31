@@ -12,7 +12,6 @@ import logging.handlers
 
 from ..apper import apper
 from .snap.geometry import Cantilever
-
 from .snap.control import value_input, JsonUpdater
 from .snap.control import ProfileSection, ProfileSettings, GapProfileSettings
 from .snap.control import ProfileSwitcher, ProfileModifier, validate_json
@@ -28,7 +27,7 @@ handlers = []
 def build(args, preview=False):
     try:
         logger = logging.getLogger("build-function")
-        logger.debug("Build initiated.")
+        logger.debug("Preview Build initiated.")
         rootComp = design.rootComponent
         inputs = args.command.commandInputs
 
@@ -83,18 +82,13 @@ def build(args, preview=False):
         # Remove the component if a join-body operation was performed
         if join_body:
             rootComp.features.removeFeatures.add(cant.occurrence)
-            logger.info(
-                f"Build succeeded with body joined and "
-                f"{len(cut_bodies)} cut_bodies.")
-        else:
-            logger.info(
-                f"Build succeeded with {len(cut_bodies)} cut_bodies.")
 
         timeline_end = design.timeline.markerPosition
         timeline_group = design.timeline.timelineGroups.add(timeline_start,
                                                             timeline_end-1)
         timeline_group.name = "Cantilever"
 
+        logger.info(f"Build succeeded.")
 
     except:
         if ui:
@@ -151,9 +145,7 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
                 self.logger.info("Input invalid because extra length negative.")
             else:
                 args.areInputsValid = True
-                self.logger.debug("Parameters are acceptable.")
-
-
+                self.logger.debug("Inputs evaluated and found to be acceptable.")
         except:
             ui.messageBox(traceback.format_exc())
 
@@ -259,7 +251,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
                    inputs: adsk.core.CommandInputs,
                    args: adsk.core.CommandEventArgs, input_values: dict):
 
-        # self.logger.debug("On_execute triggered.")
         try:
             myCmdDef = ui.commandDefinitions.itemById(
                 'SelectionEventsSample_Python')
@@ -283,7 +274,9 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
     def on_create(self, command, inputs):
         """Setting up logging"""
-        fh = logging.FileHandler(self.LOG_PATH, mode="w")
+        fh = logging.handlers.RotatingFileHandler(self.LOG_PATH, mode="a",
+                                                  maxBytes=20000)
+        self.file_handler = fh
         fh.setLevel(logging.DEBUG)
 
         format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:'
@@ -296,14 +289,12 @@ class CantileverCommand(apper.Fusion360CommandBase):
         root_logger = logging.getLogger()
         root_logger.propagate = True
         for handler in root_logger.handlers:
+            handler.close()
             root_logger.removeHandler(handler)
 
-        root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(fh)
 
         self.logger = logging.getLogger(type(self).__name__)
-        self.logger.debug("####### NEW RUN.")
-
         self.command = command
         self.profile_data: dict
 
@@ -332,6 +323,19 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
         self.add_handlers()
         self.logger.debug("Finished handlers.")
+
+        self.logger.info("Opened command window.")
+
+    def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
+                   reason: adsk.core.CommandTerminationReason, input_values: dict):
+
+        self.logger.debug("onDestroy triggered.")
+        self.logger.info("# Command Window closed.")
+        # Removing and closing all handlers
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers:
+            handler.close()
+            root_logger.removeHandler(handler)
 
     def on_preview(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
@@ -378,7 +382,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
             input = geo_list.addValueInput(geo_id, display_text, unit, value)
             # input.tooltip = "hey"
             # input.toolClipFilename = str(tooltip_path)
-
 
         # Gap section
         gap_group = feature_tab.addGroupCommandInput("gaps", "Gaps")
