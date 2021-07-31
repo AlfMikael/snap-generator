@@ -84,6 +84,8 @@ def build(args, preview=False):
 
 
 def get_advanced_params(size, length_width_ratio=1.6):
+
+    logger = logging.getLogger("advanced-params")
     # Don't allow size to go below 3
     # Kind of a dirty hack, but avoids trouble.
     if size <= 0.3:
@@ -93,6 +95,7 @@ def get_advanced_params(size, length_width_ratio=1.6):
     length = size * length_width_ratio
     nose_angle = 70
     inner_radius = 0
+    gap_buffer = 0
     if 0 < size <= 0.5:
         inner_radius = 0.05
         gap_buffer = 0.030
@@ -101,11 +104,20 @@ def get_advanced_params(size, length_width_ratio=1.6):
         gap_buffer = 0.030 + (size - 0.5) / 25
     elif 1 <= size:
         inner_radius = 0.15
-        gap_buffer = 0.50
+        gap_buffer = 0.050
+
 
     thickness = width / 2 - inner_radius - gap_buffer
     middle_padding = thickness
     ledge = 0.05 + width / 20
+
+
+    gap_buffer = round(gap_buffer, 4)
+    thickness = round(thickness, 4)
+    ledge = round(ledge, 4)
+    inner_radius = round(inner_radius, 4)
+    size = round(size, 4)
+
 
     advanced_params = {"width": width,
                        "length": length,
@@ -116,6 +128,9 @@ def get_advanced_params(size, length_width_ratio=1.6):
                        "middle_padding": middle_padding,
                        "ledge": ledge,
                        }
+
+    logger.debug(f"Size={round(size*10, 5)}mm.\tRadius={round(inner_radius*10, 5)}mm\t"
+                 f"Gap buffer={round(gap_buffer*10, 5)}mm")
     return advanced_params
 
 
