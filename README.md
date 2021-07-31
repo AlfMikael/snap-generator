@@ -19,7 +19,8 @@ __~/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns__
 
 While in the DESIGN workspace, go to the TOOLS tab and click
 ADD-INS. In the window that pops up, click the Add-Ins tab, find the name
-in the list, and click _run_.
+in the list, and click _run_. Warning: If you already have an old version running
+this needs to be stopped because it can cause issues.
 
 ![Add-ins window](docs/images/addins_list_snap_generator.png)
 
