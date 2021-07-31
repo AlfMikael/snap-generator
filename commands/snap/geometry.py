@@ -351,28 +351,26 @@ class Cantilever(BaseSnap):
         sin_th = math.sin(theta)
         cos_th = math.cos(theta)
 
-        x_rad = (1 - cos_th) * r_bot  # The x-length of bot radius arc
-        y_rad = sin_th * r_bot
+        x_rad_bot = (1 - cos_th) * r_bot  # The x-length of bot radius arc
+        y_rad_bot = sin_th * r_bot
+        x_rad_top = (1 - cos_th) * r_top
+        y_rad_top = sin_th * r_top
 
-        arm_length = length - x_rad
+        arm_length = length - x_rad_bot
 
         nose_height = 1.09 * strain * arm_length ** 2 / th
         nose_x = nose_height / math.tan(nose_angle)
 
-        x_rad = (1 - cos_th) * r_bot  # The x-length of bot radius arc
-        y_rad = sin_th * r_bot
-        y_rad_top = sin_th * r_top
-
         total_length = 1.20 * length + nose_x + x_l
 
         p_c = [(0, -g_h),
-               (x_rad, y_rad - g_h),
-               (total_length, y_rad - g_h),
-               (total_length, y_rad + th + nose_height + g_h),
-               (length + nose_x - g_l, y_rad + th + nose_height + g_h),
-               (length - g_l, y_rad + th + g_h),
-               (x_rad, y_rad + th + g_h),
-               (0, y_rad + y_rad_top + th + g_h)]
+               (x_rad_bot, y_rad_bot - g_h),
+               (total_length, y_rad_bot - g_h),
+               (total_length, y_rad_bot + th + nose_height + g_h),
+               (length + nose_x - g_l, y_rad_bot + th + nose_height + g_h),
+               (length - g_l, y_rad_bot + th + g_h),
+               (x_rad_top, y_rad_bot + th + g_h),
+               (0, y_rad_bot + y_rad_top + th + g_h)]
 
         point_pair_indexes = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6),
                               (6, 7), (7, 0)]
