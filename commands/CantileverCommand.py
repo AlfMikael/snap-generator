@@ -218,7 +218,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         "default_gap_profile": "default",
         "profiles": {
             "default": {
-                "top_radius": 0,
+                "top_radius": 0.15,
                 "bottom_radius": 0.1,
                 "thickness": 0.3,
                 "length": 1.2,
