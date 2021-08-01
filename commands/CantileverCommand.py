@@ -19,7 +19,6 @@ from .snap.control import ProfileException
 from adsk.core import SelectionCommandInput, DropDownStyles
 
 app = adsk.core.Application.get()
-design = adsk.fusion.Design.cast(app.activeProduct)
 ui = app.userInterface
 handlers = []
 
@@ -28,6 +27,7 @@ def build(args, preview=False):
     try:
         logger = logging.getLogger("build-function")
         logger.debug("Preview Build initiated.")
+        design = adsk.fusion.Design.cast(app.activeProduct)
         rootComp = design.rootComponent
         inputs = args.command.commandInputs
 
