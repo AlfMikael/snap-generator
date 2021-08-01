@@ -3,4 +3,4 @@
 /log/CantileverCommand.log
 /profile_data/CantileverPinCommand.json
 /log/CantileverPinCommand.log
-/create_release.bat
+/create_release.ps1
