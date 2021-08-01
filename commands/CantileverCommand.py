@@ -182,14 +182,6 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 
 
 class CantileverCommand(apper.Fusion360CommandBase):
-    CUT_BODIES = "cut_bodies"
-    """The generated snap bodies are to be joined to this selected body.
-        any number of cut bodies can be selected in an operation."""
-
-    DEFAULT_PROFILE = "default_profile"
-    DEFAULT_GAP_PROFILE = "default_gap_profile"
-    LAST_SELECTED_PROFILE = "last_selected"
-    LAST_SELECTED_GAP_PROFILE = "last_selected"
 
     PROJECT_DIRECTORY = Path(__file__).parent.parent
     PROFILE_DATA_PATH = PROJECT_DIRECTORY / "profile_data" / "CantileverCommand.json"

@@ -263,10 +263,6 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 # Place your program logic here
 # Delete the line that says "pass" for any method you want to use
 class CantileverPinCommand(apper.Fusion360CommandBase):
-    DEFAULT_PROFILE = "default_profile"
-    DEFAULT_GAP_PROFILE = "default_gap_profile"
-    LAST_SELECTED_PROFILE = "last_selected"
-    LAST_SELECTED_GAP_PROFILE = "last_selected"
 
     PROJECT_DIRECTORY = Path(__file__).parent.parent
     PROFILE_DATA_PATH = PROJECT_DIRECTORY / "profile_data" / "CantileverPinCommand.json"
