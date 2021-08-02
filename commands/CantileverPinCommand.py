@@ -251,9 +251,8 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
             app = adsk.core.Application.get()
             design = adsk.fusion.Design.cast(app.activeProduct)
             if design:
-                build(args)
+                build(args, preview=False)
                 all_inputs = args.command.commandInputs
-                # default_to_last(all_inputs, profile_data)
 
         except:
             if ui:
@@ -337,22 +336,23 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         logging.debug("on_execute triggered.")
         # build(args)
         try:
-            myCmdDef = ui.commandDefinitions.itemById(
-                'SelectionEventsSample_Python')
-            if myCmdDef is None:
-                myCmdDef = ui.commandDefinitions.addButtonDefinition(
-                    'SelectionEventsSample_Python',
-                    'Create cantilever', '', '')
-
+            pass
+            # myCmdDef = ui.commandDefinitions.itemById(
+            #     'SelectionEventsSample_Python')
+            # if myCmdDef is None:
+            #     myCmdDef = ui.commandDefinitions.addButtonDefinition(
+            #         'SelectionEventsSample_Python',
+            #         'Create cantilever', '', '')
+            #
             # # Connect to the command created event.
             # onCommandCreated = MyCommandCreatedHandler()
             # myCmdDef.commandCreated.add(onCommandCreated)
             # handlers.append(onCommandCreated)
-
+            #
             # prevent this module from being terminateD when the script returns,
             # because we are waiting for event handlers to fire
-            adsk.autoTerminate(False)
-            myCmdDef.execute()
+            # adsk.autoTerminate(False)
+            # myCmdDef.execute()
         except:
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
