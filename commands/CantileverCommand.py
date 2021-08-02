@@ -26,7 +26,7 @@ handlers = []
 def build(args, preview=False):
     try:
         logger = logging.getLogger("build-function")
-        logger.debug("Preview Build initiated.")
+        logger.debug("Build initiated.")
         design = adsk.fusion.Design.cast(app.activeProduct)
         rootComp = design.rootComponent
         inputs = args.command.commandInputs
