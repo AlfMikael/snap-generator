@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Changelog
+- New UI elements: Meaningful tooltip and tooltip image.
 
 ### Changed
-
+- Slight modification of Cantilever shape
+- Ui relocation, now in a drop down menu in SolidCreatePanel
 
 ### Removed
 
