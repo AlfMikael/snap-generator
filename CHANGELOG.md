@@ -14,8 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Slight modification of Cantilever shape
 - Ui relocation, now in a drop down menu in SolidCreatePanel
-
-### Removed
+- Logs and config files moved to the right place, away from addin root
 
 ## [0.1.2-alpha] - 2021-08-01
 
