@@ -2,8 +2,6 @@ import adsk.core
 import traceback
 
 
-import os
-
 try:
     from . import config
     from .apper import apper

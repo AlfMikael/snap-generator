@@ -1,22 +1,21 @@
 import adsk.core
-from adsk.core import CommandInputs
 import adsk.fusion
 import adsk.cam
+from adsk.core import SelectionCommandInput, DropDownStyles
+
 import traceback
-import shutil
-import math
-from pathlib import Path
 import json
 import logging
 import logging.handlers
+from pathlib import Path
 
 from ..apper import apper
 from .snap.geometry import Cantilever
 from .snap.control import value_input, JsonUpdater
-from .snap.control import ProfileSection, ProfileSettings, GapProfileSettings
+from .snap.control import ProfileSettings, GapProfileSettings
 from .snap.control import ProfileSwitcher, ProfileModifier, validate_json
 from .snap.control import ProfileException
-from adsk.core import SelectionCommandInput, DropDownStyles
+from ..lib import appdirs
 
 app = adsk.core.Application.get()
 ui = app.userInterface
@@ -183,14 +182,6 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 
 class CantileverCommand(apper.Fusion360CommandBase):
 
-    PROJECT_DIRECTORY = Path(__file__).parent.parent
-
-    PROFILE_DATA_PATH = PROJECT_DIRECTORY / "profile_data" / "CantileverCommand.json"
-    RESOURCE_FOLDER = PROJECT_DIRECTORY / "commands" / "resources" / \
-                      "CantileverCommand"
-    TOOL_CLIP_FILE_PATH = RESOURCE_FOLDER / "toolclip.png"
-    LOG_PATH = PROJECT_DIRECTORY / "log" / "CantileverCommand.log"
-
     GEOMETRY_PARAMETERS = [
         {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},
         {"id": "nose_angle", "display_text": "Nose angle", "units": ""},
@@ -231,6 +222,31 @@ class CantileverCommand(apper.Fusion360CommandBase):
         }
     }
 
+    def __init__(self, name: str, options: dict):
+        super().__init__(name, options)
+
+        # Store logs and profile config in config folder
+        appname = "Snap Generator - Fusion 360 addin"
+        version = "0.2.0"
+        logs_folder = Path(
+            appdirs.user_log_dir(appname=appname, version=version))
+        app_folder = Path(
+            appdirs.user_config_dir(appname=appname, version=version))
+
+        if not logs_folder.exists():
+            logs_folder.mkdir(parents=True)
+        self.log_path = logs_folder / "CantileverCommand.log"
+
+        self.profiles_path = app_folder / "Profile Data" / "CantileverCommand.json"
+        if not self.profiles_path.parent.exists():
+            self.profiles_path.mkdir(parents=True)
+
+        # Loading references relative to this projects root
+        self.root_dir = self.fusion_app.root_path
+        self.resources_path = self.root_dir / "commands" / "resources" / \
+                              "CantileverCommand"
+        self.tool_clip_file_path = self.resources_path / "toolclip.png"
+
     def update_json_file(self):
         # 60 bytes is the absolute minimum size that a valid profile_data
         # file can be, so it will most likely be an error to back this up
@@ -238,7 +254,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         #     shutil.copy(PROFILE_DATA_PATH, PROFILE_DATABACKUP_PATH)
 
         # TODO: Put some logic here to make sure you're not deleting a good file
-        with open(self.PROFILE_DATA_PATH, "w") as f:
+        with open(self.profiles_path, "w") as f:
             json.dump(self.profile_data, f, indent=2)
 
     def on_execute(self, command: adsk.core.Command,
@@ -268,7 +284,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
     def on_run(self):
         super().on_run()
-        self.command_definition.toolClipFilename = str(self.TOOL_CLIP_FILE_PATH)
+        self.command_definition.toolClipFilename = str(self.tool_clip_file_path)
 
     def on_create(self, command, inputs):
         # Logging
@@ -280,7 +296,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
             root_logger.removeHandler(handler)
 
         # Adding logging to the defined LOG_Path
-        fh = logging.handlers.RotatingFileHandler(self.LOG_PATH, mode="a",
+        fh = logging.handlers.RotatingFileHandler(self.log_path, mode="a",
                                                   maxBytes=20000)
         self.file_handler = fh
         fh.setLevel(logging.DEBUG)
@@ -299,21 +315,21 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.command = command
 
         # Add a tooclip image to the command
-        self.command_definition.toolClipFilename = str(self.TOOL_CLIP_FILE_PATH)
+        self.command_definition.toolClipFilename = str(self.tool_clip_file_path)
         # Makes it so the command is not automatically executed when another
         # command gets activated.
         self.command.isExecutedWhenPreEmpted = False
         self.profile_data: dict
 
         # Create JSON file if necessary
-        if not self.PROFILE_DATA_PATH.is_file():
+        if not self.profiles_path.is_file():
             self.logger.info("No json file was found. Created a new,"
                              " default file.")
-            with open(self.PROFILE_DATA_PATH, "w") as f:
+            with open(self.profiles_path, "w") as f:
                 json.dump(self.FALLBACK_JSON, f, indent=2)
 
         # Load and validate JSON data
-        with open(self.PROFILE_DATA_PATH, "r") as f:
+        with open(self.profiles_path, "r") as f:
             data = json.load(f)
 
         try:
@@ -366,7 +382,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
                         DropDownStyles.LabeledIconDropDownStyle)
         profile_list.maxVisibleItems = 10
         # profile_list.isFullWidth = True
-        blank_icon_path = self.RESOURCE_FOLDER / "white"
+        blank_icon_path = self.resources_path / "white"
 
         default_profile_name = self.profile_data["default_profile"]
         items = profile_list.listItems
@@ -462,9 +478,9 @@ class CantileverCommand(apper.Fusion360CommandBase):
         joint_choice.tooltip = "Choose the x-location of the origin."
         x_items = joint_choice.listItems
 
-        x_top_folder_path = self.RESOURCE_FOLDER / "joint_pos_thickness" / "top"
-        x_middle_folder_path = self.RESOURCE_FOLDER / "joint_pos_thickness" / "middle"
-        x_bottom_folder_path = self.RESOURCE_FOLDER / "joint_pos_thickness" / "bottom"
+        x_top_folder_path = self.resources_path / "joint_pos_thickness" / "top"
+        x_middle_folder_path = self.resources_path / "joint_pos_thickness" / "middle"
+        x_bottom_folder_path = self.resources_path / "joint_pos_thickness" / "bottom"
 
         x_items.add("top", False, str(x_top_folder_path))
         x_items.add("middle", True, str(x_middle_folder_path))
@@ -478,9 +494,9 @@ class CantileverCommand(apper.Fusion360CommandBase):
                                                             "y location",
                                                             False)
         y_items = joint_choice.listItems
-        y_top_folder_path = self.RESOURCE_FOLDER / "joint_pos_length" / "top"
-        y_middle_folder_path = self.RESOURCE_FOLDER / "joint_pos_length" / "middle"
-        y_bottom_folder_path = self.RESOURCE_FOLDER / "joint_pos_length" / "bottom"
+        y_top_folder_path = self.resources_path / "joint_pos_length" / "top"
+        y_middle_folder_path = self.resources_path / "joint_pos_length" / "middle"
+        y_bottom_folder_path = self.resources_path / "joint_pos_length" / "bottom"
 
         y_items.add("top", True, str(y_top_folder_path))
         y_items.add("middle", False, str(y_middle_folder_path))
@@ -525,11 +541,11 @@ class CantileverCommand(apper.Fusion360CommandBase):
         cmd.inputChanged.add(profile_switcher)
         handlers.append(profile_switcher)
 
-        profile_modifier = ProfileModifier(self.profile_data, self.RESOURCE_FOLDER)
+        profile_modifier = ProfileModifier(self.profile_data, self.resources_path)
         cmd.inputChanged.add(profile_modifier)
         handlers.append(profile_modifier)
 
-        j_updater = JsonUpdater(self.profile_data, self.PROFILE_DATA_PATH)
+        j_updater = JsonUpdater(self.profile_data, self.profiles_path)
         cmd.inputChanged.add(j_updater)
         handlers.append(j_updater)
 
