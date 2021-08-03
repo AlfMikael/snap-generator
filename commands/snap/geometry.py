@@ -288,7 +288,9 @@ class BaseSnap:
 
 
 class Cantilever(BaseSnap):
+
     component_name = "Cantilever"
+
     def _sketch_join_properties(self, parameters):
         # Parameters for drawing the profile
         r_top = parameters['top_radius']
@@ -298,9 +300,9 @@ class Cantilever(BaseSnap):
         strain = parameters['strain']
         nose_angle = math.radians(parameters["nose_angle"])
 
-        theta = math.atan(l / (th / 2))
-        sin_th = math.sin(theta)
-        cos_th = math.cos(theta)
+        bot_radius_sweep_angle = math.atan(l / (th / 2))
+        sin_th = math.sin(bot_radius_sweep_angle)
+        cos_th = math.cos(bot_radius_sweep_angle)
 
         x_rad = (1 - cos_th) * r_bot  # The x-length of bot radius arc
         y_rad = sin_th * r_bot  # The y-length of bot radius arc
@@ -318,15 +320,15 @@ class Cantilever(BaseSnap):
                (l + nose_x, y_rad + th + nose_height),
                (l + nose_x, y_rad + th + nose_height),
                (l, y_rad + th),
-               ((1 - cos_th) * r_top, y_rad + th),
-               (r_top, sin_th * (r_bot + r_top) + th),
-               (0, sin_th * (r_bot + r_top) + th)]
+               (r_top, y_rad + th),
+               (r_top, sin_th * r_bot + r_top + th),
+               (0, sin_th * r_bot + r_top + th)]
 
         # Define which point indexes should be connected by straight lines
         point_pair_indexes = [(2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8),
                               (8, 9), (11, 0)]
         # Defines two arcs by point indexes and sweep angle
-        arc_lines = [(1, 0, - theta), (10, 11, theta)]
+        arc_lines = [(1, 0, - bot_radius_sweep_angle), (10, 11, math.pi/2)]
 
         data = {"points_coordinates": p_c,
                 "point_pair_indexes": point_pair_indexes,
@@ -353,8 +355,8 @@ class Cantilever(BaseSnap):
 
         x_rad_bot = (1 - cos_th) * r_bot  # The x-length of bot radius arc
         y_rad_bot = sin_th * r_bot
-        x_rad_top = (1 - cos_th) * r_top
-        y_rad_top = sin_th * r_top
+        x_rad_top = r_top
+        y_rad_top = r_top
 
         arm_length = length - x_rad_bot
 
