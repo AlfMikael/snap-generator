@@ -83,6 +83,7 @@ def build(args, preview=False):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
+
 def get_advanced_params(size, length_width_ratio=1.6):
 
     logger = logging.getLogger("advanced-params")
@@ -211,7 +212,11 @@ class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
         app = adsk.core.Application.get()
         design = adsk.fusion.Design.cast(app.activeProduct)
         build(args, preview=True)
-
+        # try:
+        #
+        #     args.command.on_stop()
+        # except:
+        #     ui.messageBox(traceback)
 
 class SimpleInputHandler(adsk.core.InputChangedEventHandler):
     """
@@ -266,6 +271,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
     PROJECT_DIRECTORY = Path(__file__).parent.parent
     PROFILE_DATA_PATH = PROJECT_DIRECTORY / "profile_data" / "CantileverPinCommand.json"
     RESOURCE_FOLDER = PROJECT_DIRECTORY / "commands" / "resources" / "CantileverPinCommand"
+    TOOL_CLIP_FILE_PATH = RESOURCE_FOLDER / "toolclip.png"
     LOG_PATH = PROJECT_DIRECTORY / "log" / "CantileverPinCommand.log"
 
     GEOMETRY_PARAMETERS = [
@@ -329,6 +335,8 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         with open(self.PROFILE_DATA_PATH, "w") as f:
             json.dump(self.profile_data, f, indent=2)
 
+
+
     def on_execute(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
                    args: adsk.core.CommandEventArgs, input_values: dict):
@@ -357,6 +365,10 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
+    def on_run(self):
+        super().on_run()
+        self.command_definition.toolClipFilename = str(self.TOOL_CLIP_FILE_PATH)
+
     def on_create(self, command, inputs):
         try:
             """Setting up logging"""
@@ -377,11 +389,16 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
             root_logger.setLevel(logging.DEBUG)
             root_logger.addHandler(fh)
 
-            logger = logging.getLogger(__name__)
+            self.logger = logging.getLogger(type(self).__name__)
             logging.debug("####### NEW RUN.")
 
             self.command = command
+
+            # Makes it so the command is not automatically executed when another
+            # command gets activated.
+            self.command.isExecutedWhenPreEmpted = False
             self.profile_data: dict
+
 
             # Checking and fixing profile_data json
             profile_path = Path(self.PROFILE_DATA_PATH)
@@ -394,9 +411,9 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
                 self.profile_data = self.FALLBACK_JSON
 
             self.createGUI()
-            logging.debug("Finished GUI")
+            self.logger.debug("Finished GUI")
             self.add_handlers()
-            logging.debug("Finished handlers.")
+            self.logger.debug("Finished handlers.")
         except:
             ui.messageBox(traceback.format_exc())
 

@@ -184,9 +184,11 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 class CantileverCommand(apper.Fusion360CommandBase):
 
     PROJECT_DIRECTORY = Path(__file__).parent.parent
+
     PROFILE_DATA_PATH = PROJECT_DIRECTORY / "profile_data" / "CantileverCommand.json"
     RESOURCE_FOLDER = PROJECT_DIRECTORY / "commands" / "resources" / \
                       "CantileverCommand"
+    TOOL_CLIP_FILE_PATH = RESOURCE_FOLDER / "toolclip.png"
     LOG_PATH = PROJECT_DIRECTORY / "log" / "CantileverCommand.log"
 
     GEOMETRY_PARAMETERS = [
@@ -264,8 +266,20 @@ class CantileverCommand(apper.Fusion360CommandBase):
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
+    def on_run(self):
+        super().on_run()
+        self.command_definition.toolClipFilename = str(self.TOOL_CLIP_FILE_PATH)
+
     def on_create(self, command, inputs):
-        """Setting up logging"""
+        # Logging
+        root_logger = logging.getLogger()
+        root_logger.propagate = True
+        # Remove any loggers that aren't cleaned up.
+        for handler in root_logger.handlers:
+            handler.close()
+            root_logger.removeHandler(handler)
+
+        # Adding logging to the defined LOG_Path
         fh = logging.handlers.RotatingFileHandler(self.LOG_PATH, mode="a",
                                                   maxBytes=20000)
         self.file_handler = fh
@@ -274,33 +288,32 @@ class CantileverCommand(apper.Fusion360CommandBase):
         format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:'
                                    ' %(message)s',
                                    datefmt='%H:%M:%S')
-
         fh.setFormatter(format)
         fh.mode = "w"
-
-        root_logger = logging.getLogger()
-        root_logger.propagate = True
-        for handler in root_logger.handlers:
-            handler.close()
-            root_logger.removeHandler(handler)
-
         root_logger.addHandler(fh)
 
+        # Creating a specific logger for this class
         self.logger = logging.getLogger(type(self).__name__)
+
+        # Connect to the command object
         self.command = command
+
+        # Add a tooclip image to the command
+        self.command_definition.toolClipFilename = str(self.TOOL_CLIP_FILE_PATH)
+        # Makes it so the command is not automatically executed when another
+        # command gets activated.
+        self.command.isExecutedWhenPreEmpted = False
         self.profile_data: dict
 
-        profile_path = Path(self.PROFILE_DATA_PATH)
-
         # Create JSON file if necessary
-        if not profile_path.is_file():
+        if not self.PROFILE_DATA_PATH.is_file():
             self.logger.info("No json file was found. Created a new,"
                              " default file.")
-            with open(profile_path, "w") as f:
+            with open(self.PROFILE_DATA_PATH, "w") as f:
                 json.dump(self.FALLBACK_JSON, f, indent=2)
 
         # Load and validate JSON data
-        with open(profile_path, "r") as f:
+        with open(self.PROFILE_DATA_PATH, "r") as f:
             data = json.load(f)
 
         try:
@@ -380,8 +393,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
         default_gap_profile_name = self.profile_data['default_gap_profile']
         gap_profile = self.profile_data["gap_profiles"][
             default_gap_profile_name]
-
-
 
         gap_list = gap_group.children
         gap_profiles = gap_list.addDropDownCommandInput("gap_profiles",
