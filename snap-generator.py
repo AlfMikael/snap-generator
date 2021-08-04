@@ -2,6 +2,7 @@ import adsk.core
 import traceback
 
 
+
 try:
     from . import config
     from .apper import apper
@@ -10,6 +11,10 @@ try:
     # Load commands
     from .commands.CantileverCommand import CantileverCommand
     from .commands.CantileverPinCommand import CantileverPinCommand
+    # todo: Implement RotatableCantileverCommand
+    # todo: Implement RotatableCantileverPinCommand
+    # todo: Implement AnnularCommand
+    # todo: Implement AnnularPinCommand
 
     # Create our addin definition object
     my_addin = apper.FusionApp(config.app_name, config.company_name, False)
