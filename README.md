@@ -24,7 +24,7 @@ this needs to be stopped because it can cause issues.
 
 ![Add-ins window](docs/images/addins_list_snap_generator.png)
 
-It should now appear in the SOLID tab.
+It should now appear in the SOLID tab, under _CREATE_.
 ![Position](docs/images/position_in_workspace.png)
 
 Usage
