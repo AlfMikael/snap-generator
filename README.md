@@ -7,8 +7,9 @@ user input.
 
 Installation
 ----
-Cick _releases_ on the right side, and download the most recent one. Unzip
-and paste the unizipped folder into the Fusion 360 add-ins folder. 
+Click [HERE](https://github.com/AlfMikael/snap-generator/releases/download/0.2.0/snap-generator-v0.2.0.zip)
+to download the latest release.
+Unzip and paste the unizipped folder into the Fusion 360 add-ins folder. 
 On Windows, it's located at
 
 __%appdata%\Autodesk\Autodesk Fusion 360\API\AddIns__
