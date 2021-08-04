@@ -7,21 +7,31 @@ by string id's, and the different geometry classes expect the same names.
 Because of that, it would be a good idea to define these names only once.
 """
 
-import adsk.core
+
 import json
 import traceback
-
 import logging
-from adsk.core import CommandInputs, DropDownStyles
 from pathlib import Path
 
+
+from adsk.core import CommandInputs, DropDownStyles
+import adsk.core
+
+
 PROJECT_DIRECTORY = Path(__file__).parent.parent.parent
-RESOURCE_FOLDER = PROJECT_DIRECTORY / "commands" / "resources"
+COMMON_RESOURCES_FOLDER = PROJECT_DIRECTORY / "commands" / "resources" / "common"
 
 app = adsk.core.Application.get()
 ui = app.userInterface
 
+
 class ValueCommandSynchronizer(adsk.core.InputChangedEventHandler):
+    """
+    This class links two interface fields so that when a value is set/changed
+    in one of them, the value in the other one becomes identical. It is
+    essentially trying to make two fields with different id's behave like one
+    and the same.
+    """
     def __init__(self, linked_input_ids=None):
         super().__init__()
         self.logger = logging.getLogger(type(self).__name__)
@@ -54,6 +64,11 @@ class ValueCommandSynchronizer(adsk.core.InputChangedEventHandler):
 
 
 class ProfileModifier(adsk.core.InputChangedEventHandler):
+    """
+    This class listens to changes made in the profile tab of the command
+    interface, and performs the appropriate changes to the profile_data
+    dictionary. No IO.
+    """
     def __init__(self, profile_data, resource_folder):
         super().__init__()
         self.profile_data = profile_data
@@ -148,12 +163,10 @@ class ProfileModifier(adsk.core.InputChangedEventHandler):
                     new_value = all_inputs.itemById(key).value
                     prof_to_overwrite[key] = round(new_value, 3)
 
-
             # If change default profile was clicked
             elif input.id == "make_profile_default":
                 name = all_inputs.itemById("profiles2").selectedItem.name
                 self.profile_data["default_profile"] = name
-
 
             # If delete profile was clicked
             elif input.id == "delete_profile":
@@ -201,8 +214,6 @@ class ProfileModifier(adsk.core.InputChangedEventHandler):
                     error.isVisible = False
                     new_name_field.value = ""
                     self.reload_gap_profile_lists(all_inputs)
-
-                    # TODO: Implement real-time update of list sections
 
             # If overwrite gap profile was clicked
             elif input.id == "overwrite_gap_profile":
@@ -278,6 +289,13 @@ class ProfileModifier(adsk.core.InputChangedEventHandler):
 
 
 class ProfileSwitcher(adsk.core.InputChangedEventHandler):
+    """
+    This class listens to when the user selects a new profile or gap profile
+    in the Feature tab, and replaces the values currently in the relevant
+    interface fields with the values from the now selected profile or gap
+    profile. Note that the user can't reselect the currently active profile,
+    because that doesn't trigger an InputChangedEvent.
+    """
     def __init__(self, profile_data):
         super().__init__()
         self.profile_data = profile_data
@@ -319,37 +337,23 @@ class ProfileSwitcher(adsk.core.InputChangedEventHandler):
                     value_in_float = float(value)
                     all_inputs.itemById(key).value = value_in_float
 
-            # # A gap profile was selected, change to that profile.
-            # if input.id == "gap_profiles":
-            #     try:
-            #         self.logger.debug(f"Trying to change profile.")
-            #         profile_id = input.selectedItem.name
-            #     except AttributeError:
-            #         # Happens when the selected item is None
-            #         return
-            #     profile = self.profile_data["gap_profiles"][profile_id]
-            #     for key, value in profile.items():
-            #         value_in_float = float(value)
-            #         all_inputs.itemById(key).value = value_in_float
-            #
-            #     self.reload_gap_profile_lists(all_inputs)
-
         except:
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 class JsonUpdater(adsk.core.InputChangedEventHandler):
+    """
+    This class overwrites the existing JSON configuration file that stores
+    profiles and gap profiles when any of the defined events occur.
+    """
+
     def __init__(self, profile_data, json_filepath):
         super().__init__()
         self.profile_data = profile_data
         self.json_filepath = json_filepath
 
     def notify(self, args):
-        """
-        This is an 'InputChangedEventArgs' object.
-        :return:
-        """
         save_triggers = ["create_new_profile", "overwrite_profile",
                          "make_profile_default", "delete_profile",
                          "create_new_gap_profile", "overwrite_gap_profile",
@@ -365,6 +369,12 @@ class JsonUpdater(adsk.core.InputChangedEventHandler):
 
 
 class ProfileSettings:
+    """
+    This class creates the interface elements for creating new
+    profiles and modifying, overwriting, making default and deleting existing
+    ones. It includes an initially invisible error message text field that can
+    be made visible as a way to display errors.
+    """
     def __init__(self, profile_data):
         self.profile_data = profile_data
 
@@ -373,26 +383,28 @@ class ProfileSettings:
         """GEOMETRY PROFILE TAB"""
         group1 = inputs.addGroupCommandInput("create_prof_group",
                                              "Create new profile").children
-        # For delivering error message
+
+        # Error message field
+        error_message = """Error: A profile by that name already exists. Did 
+        you mean to overwrite? """
         error = group1.addTextBoxCommandInput('profile_exists_error', '',
-                                              'Error: A profile by that name already'
-                                              ' exists. Did you mean to overwrite?',
+                                              error_message,
                                               3, True)
         error.isVisible = False
 
-        group1.addStringValueInput("new_profile_name",
-                                   "New name")
+        group1.addStringValueInput("new_profile_name", "New name")
 
         group1.addBoolValueInput("create_new_profile", "Create new", False)
 
         group2 = inputs.addGroupCommandInput("overwrite_prof_group",
                                              "Edit existing profile").children
+        list_style = adsk.core.DropDownStyles.LabeledIconDropDownStyle
         profile_list = group2.addDropDownCommandInput('profiles2',
                                                       "Select profile:",
-                                                      adsk.core.DropDownStyles.LabeledIconDropDownStyle)
+                                                      list_style)
         items = profile_list.listItems
         default_profile_name = self.profile_data["default_profile"]
-        blank_icon_path = RESOURCE_FOLDER / "common" / "white"
+        blank_icon_path = COMMON_RESOURCES_FOLDER / "white"
         for key in self.profile_data['profiles']:
             if key == default_profile_name:
                 items.add(key, True, str(blank_icon_path))
@@ -405,6 +417,12 @@ class ProfileSettings:
 
 
 class GapProfileSettings:
+    """
+    This class creates the interface elements for creating new gap
+    profiles and modifying, overwriting, making default and deleting existing
+    ones. It includes an initially invisible error message text field that can
+    be made visible as a way to display errors.
+    """
     def __init__(self, profile_data):
         self.profile_data = profile_data
 
@@ -412,11 +430,11 @@ class GapProfileSettings:
         """Adds a standard tab for doing gap-profile-manipulation."""
         group1 = inputs.addGroupCommandInput("create_gap_group",
                                              "Create new gap profile").children
-        # For delivering error message
+        # Error message field
+        error_message = 'Error: A gap profile by that name already exists. ' \
+                        'Did you mean to overwrite? '
         error = group1.addTextBoxCommandInput('gap_profile_exists_error', '',
-                                              'Error: A gap profile by that name'
-                                              ' already exists. Did you mean to '
-                                              'overwrite?', 3, True)
+                                              error_message, 3, True)
         error.isVisible = False
 
         group1.addStringValueInput("new_gap_profile_name",
@@ -425,13 +443,14 @@ class GapProfileSettings:
         group1.addBoolValueInput("create_new_gap_profile", "Create new", False)
         group2 = inputs.addGroupCommandInput("overwrite_gap_group",
                                              "Edit existing gap profile.").children
+        list_style = adsk.core.DropDownStyles.LabeledIconDropDownStyle
         gap_profile_list = group2.addDropDownCommandInput('gap_profiles2',
                                                           "Select gap profile:",
-                                                          adsk.core.DropDownStyles.LabeledIconDropDownStyle)
+                                                          list_style)
         gap_profile_list.maxVisibleItems = 8
         items = gap_profile_list.listItems
         default_gap_profile_name = self.profile_data["default_gap_profile"]
-        blank_icon_path = RESOURCE_FOLDER / "common" / "white"
+        blank_icon_path = COMMON_RESOURCES_FOLDER / "white"
         for key in self.profile_data['gap_profiles']:
             if key == default_gap_profile_name:
                 items.add(key, True, str(blank_icon_path))
@@ -445,7 +464,10 @@ class GapProfileSettings:
 
 
 class ProfileSection:
-    """A helper class to avoid repeating the same code."""
+    """
+    This class is deprecated. It was previously used to create drop down lists
+    for choosing profile and gap profile in the feature tab.
+    """
 
     def __init__(self, profile_data):
 
@@ -478,7 +500,7 @@ class ProfileSection:
 
         default_profile_name = self.profile_data['default_profile']
         default_gap_profile_name = self.profile_data['default_gap_profile']
-        blank_icon_path = RESOURCE_FOLDER / "common" / "white"
+        blank_icon_path = COMMON_RESOURCES_FOLDER / "white"
         for key in self.profile_data['profiles']:
             if key == default_profile_name:
                 items.add(key, True, str(blank_icon_path))
@@ -495,13 +517,26 @@ class ProfileSection:
 
 
 class ProfileException(Exception):
+    """
+    This Exception is to be used when a user tries to do operations on
+    profiles that don't exist in profile_data.
+    """
     pass
 
 
 def value_input(value):
+    """
+    Converts values into the format that Fusion expects for displaying values in
+    interface fields and performing feature operations.
+    """
     valueInput = adsk.core.ValueInput
-    value_obj = valueInput.createByReal(value)
-
+    if isinstance(value, str):
+        value_obj = valueInput.createByString(value)
+    elif isinstance(value, (int, float)):
+        value_obj = valueInput.createByReal(value)
+    else:
+        raise TypeError("Argument type should be either string or number, "
+                        f"not {type(value)}.")
     return value_obj
 
 
