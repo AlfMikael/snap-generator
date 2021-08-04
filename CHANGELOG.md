@@ -7,14 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0]
+
 ### Added
-- Changelog
+- Changelog.
 - New UI elements: Meaningful tooltip and tooltip image.
 
 ### Changed
-- Slight modification of Cantilever shape
-- Ui relocation, now in a drop down menu in SolidCreatePanel
-- Logs and config files moved to the right place, away from addin root
+- Slight modification of Cantilever shape.
+- Ui relocation, now in a drop down menu in SolidCreatePanel.
+- Logs and config files moved to the right place, away from addin root.
+- Changed the way CantileverPin scales as a function of size.
 
 ## [0.1.2-alpha] - 2021-08-01
 
@@ -29,7 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Everything around that is needed to implement these two features.
 
 
-[Unreleased]: https://github.com/AlfMikael/snap-generator/compare/v0.1.2-alpha...master
+[Unreleased]: https://github.com/AlfMikael/snap-generator/compare/0.2.0...master
+[0.2.0]: https://github.com/AlfMikael/snap-generator/compare/v0.1.2-alpha...0.2.0
 [0.1.2-alpha]: https://github.com/AlfMikael/snap-generator/compare/v0.1.1-alpha...v0.1.2-alpha
 [0.1.1-alpha]: https://github.com/AlfMikael/snap-generator/compare/v0.1.1-alpha...v0.1.2-alpha
 [0.1.0-alpha]: https://github.com/AlfMikael/snap-generator/releases/tag/v0.1.0-alpha
