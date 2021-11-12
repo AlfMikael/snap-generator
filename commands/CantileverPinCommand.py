@@ -359,7 +359,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
 
         self.profiles_path = config_folder / "Profile Data" / "CantileverPinCommand.json"
         if not self.profiles_path.parent.exists():
-            self.profiles_path.mkdir(parents=True)
+            self.profiles_path.parent.mkdir(parents=True)
 
         # Loading references relative to this projects root
         self.root_dir = self.fusion_app.root_path

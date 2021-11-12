@@ -248,16 +248,17 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
         logs_folder = Path(
             appdirs.user_log_dir(appname=appname, version=version))
-        app_folder = Path(
+        config_folder = Path(
             appdirs.user_config_dir(appname=appname, version=version))
+
 
         if not logs_folder.exists():
             logs_folder.mkdir(parents=True)
         self.log_path = logs_folder / "CantileverCommand.log"
 
-        self.profiles_path = app_folder / "Profile Data" / "CantileverCommand.json"
+        self.profiles_path = config_folder / "Profile Data" / "CantileverPinCommand.json"
         if not self.profiles_path.parent.exists():
-            self.profiles_path.mkdir(parents=True)
+            self.profiles_path.parent.mkdir(parents=True)
 
         # Loading references relative to this projects root
         self.root_dir = self.fusion_app.root_path
