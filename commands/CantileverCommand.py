@@ -245,12 +245,10 @@ class CantileverCommand(apper.Fusion360CommandBase):
         # Varies depending on operating system. See appdirs module.
         appname = "Snap Generator - Fusion 360 addin"
         version = "0.2.0"
-
         logs_folder = Path(
             appdirs.user_log_dir(appname=appname, version=version))
         config_folder = Path(
             appdirs.user_config_dir(appname=appname, version=version))
-
 
         if not logs_folder.exists():
             logs_folder.mkdir(parents=True)
@@ -331,12 +329,22 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.command.isExecutedWhenPreEmpted = False
         self.profile_data: dict
 
-        # Create JSON file if necessary
-        if not self.profiles_path.is_file():
-            self.logger.info("No json file was found. Created a new,"
-                             " default file.")
-            with open(self.profiles_path, "w") as f:
+        # # Create JSON file if necessary
+        # if not self.profiles_path.is_file():
+        #     self.logger.info("No json file was found. Created a new,"
+        #                      " default file.")
+        #     with open(self.profiles_path, "w") as f:
+        #         json.dump(self.FALLBACK_JSON, f, indent=2)
+
+        # Checking and fixing profile_data json
+        profile_path = Path(self.profiles_path)
+        if profile_path.is_file():
+            with open(profile_path, "r") as f:
+                self.profile_data = json.load(f)
+        else:
+            with open(profile_path, "w") as f:
                 json.dump(self.FALLBACK_JSON, f, indent=2)
+            self.profile_data = self.FALLBACK_JSON
 
         # Load and validate JSON data
         with open(self.profiles_path, "r") as f:
