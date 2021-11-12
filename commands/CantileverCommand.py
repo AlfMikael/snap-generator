@@ -256,7 +256,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
             logs_folder.mkdir(parents=True)
         self.log_path = logs_folder / "CantileverCommand.log"
 
-        self.profiles_path = config_folder / "Profile Data" / "CantileverPinCommand.json"
+        self.profiles_path = config_folder / "Profile Data" / "CantileverCommand.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 

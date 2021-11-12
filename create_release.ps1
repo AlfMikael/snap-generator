@@ -1,7 +1,7 @@
 # Script that clones the repo with git, and then removes
 # the things that are unneeded and unwanted for a release.
 
-$version = "v0.2.0"
+$version = "v0.2.1"
 $source_repo = "."
 $name = "snap-generator-$version"
 $target_folder = "../$name"
