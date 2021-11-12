@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1]
+- Fixed a file handling bug which broke the application.
+
 ## [0.2.0]
 
 ### Added
@@ -33,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 [Unreleased]: https://github.com/AlfMikael/snap-generator/compare/0.2.0...master
+[0.2.1]: https://github.com/AlfMikael/snap-generator/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/AlfMikael/snap-generator/compare/v0.1.2-alpha...0.2.0
 [0.1.2-alpha]: https://github.com/AlfMikael/snap-generator/compare/v0.1.1-alpha...v0.1.2-alpha
 [0.1.1-alpha]: https://github.com/AlfMikael/snap-generator/compare/v0.1.1-alpha...v0.1.2-alpha
