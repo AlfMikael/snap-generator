@@ -409,7 +409,11 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
             self.profile_data: dict
 
             # Checking and fixing profile_data json
+            # If parent folder somehow is missing, add it
             profile_path = Path(self.profiles_path)
+            if not self.profiles_path.parent.exists():
+                self.profiles_path.parent.mkdir(parents=True)
+
             if profile_path.is_file():
                 with open(profile_path, "r") as f:
                     self.profile_data = json.load(f)
