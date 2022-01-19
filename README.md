@@ -23,14 +23,13 @@ ADD-INS. In the window that pops up, click the Add-Ins tab, find the name
 in the list, and click _run_. Warning: If you already have an old version running
 this needs to be stopped because it can cause issues.
 
-[Youtube Instruction](https://www.youtube.com/watch?v=WntehMWM55I)
-
 It should now appear in the SOLID tab, under _CREATE_.
 ![Position](docs/images/position_in_workspace.png)
 
 Usage
 ----
 There are two snap features currently available (with a few more planned).
+[Youtube Instruction](https://www.youtube.com/watch?v=WntehMWM55I)
 1. A single cantilever
 2. A pin with two cantilevers on each side.
 
