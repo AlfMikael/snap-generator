@@ -29,6 +29,7 @@ It should now appear in the SOLID tab, under _CREATE_.
 Usage
 ----
 There are two snap features currently available (with a few more planned).
+
 [Youtube Instruction](https://www.youtube.com/watch?v=WntehMWM55I)
 1. A single cantilever
 2. A pin with two cantilevers on each side.
@@ -53,8 +54,6 @@ pin itself.
 In the __Profiles__ tab, profiles can be created, overwritten and made into the
 default profile. The __Gaps__ tab works the same way.
 
-### Instruction video
-![video](https://www.youtube.com/watch?v=WntehMWM55I)
 
 ### Joint origin
 The shape can be positioned and oriented in space by a _joint origin_, which
