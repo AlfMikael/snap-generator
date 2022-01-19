@@ -23,7 +23,7 @@ ADD-INS. In the window that pops up, click the Add-Ins tab, find the name
 in the list, and click _run_. Warning: If you already have an old version running
 this needs to be stopped because it can cause issues.
 
-![Add-ins window](https://www.youtube.com/watch?v=WntehMWM55I)
+![Youtube Instruction](https://www.youtube.com/watch?v=WntehMWM55I)
 
 It should now appear in the SOLID tab, under _CREATE_.
 ![Position](docs/images/position_in_workspace.png)
