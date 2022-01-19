@@ -54,6 +54,9 @@ pin itself.
 In the __Profiles__ tab, profiles can be created, overwritten and made into the
 default profile. The __Gaps__ tab works the same way.
 
+### Instruction video
+![video](https://www.youtube.com/watch?v=WntehMWM55I)
+
 ### Joint origin
 The shape can be positioned and oriented in space by a _joint origin_, which
 is a built-in feature. It is found in the ASSEMBLE dropdown.
