@@ -4,7 +4,7 @@
     "id": "398794d2-2370-4632-b6dd-5a1a9208a9a4",
     "author": "Alf Mikael Constantinou",
     "description": "Module to generate snap geometry.",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "runOnStartup": false,
     "supportedOS": "windows|mac",
     "editEnabled": true
