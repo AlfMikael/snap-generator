@@ -446,7 +446,6 @@ class CantileverPin(BaseSnap):
         strain = parameters['strain']
         width = parameters['width']
         ledge = parameters["ledge"]
-        e_len = parameters["extra_length"]
         m_p = parameters["middle_padding"]
         gap_length = parameters["gap_length"]
         y_gap = parameters["gap_thickness"]
