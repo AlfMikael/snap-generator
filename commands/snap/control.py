@@ -2,7 +2,7 @@
 Classes and predefined object instances for streamlining GUI inputs.
 
 There is a need for having predefined objects because these same objects are
-used across different geometry classes. Input objects are typycally referred to
+used across different geometry classes. Input objects are typically referred to
 by string id's, and the different geometry classes expect the same names.
 Because of that, it would be a good idea to define these names only once.
 """

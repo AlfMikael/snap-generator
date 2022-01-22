@@ -11,7 +11,7 @@ from adsk.fusion import Component
 
 class BaseSnap:
     component_name = "snap_mechanism"
-    gap_in_cut_body = True
+    gap_in_cut_body = True   # Determines where gaps are applied
 
     def __init__(self, parent_comp: Component, parameters: dict,
                  target_joint_org=None, join_body=None, cut_bodies=tuple()):
@@ -21,7 +21,7 @@ class BaseSnap:
         :param parent_comp: The component into which this component is created.
         :param parameters: The properties that define the geometric shape, along
             with the reference position for placement.
-        :param join_body: A reference to a single BRepBody that the new body is
+        :param join_body: A reference to a single BRpBody that the new body is
             to be combined with.
         :param cut_bodies: A list of bodies on which a cut operation will be
             performed to create a opening for the bendable shape.
