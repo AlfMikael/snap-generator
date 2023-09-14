@@ -1,5 +1,6 @@
 import adsk.core
 import traceback
+import cadquery_bundled
 
 
 
