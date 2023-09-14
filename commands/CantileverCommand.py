@@ -294,7 +294,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         # The image that pops up when hovering over the command icon
         self.command_definition.toolClipFilename = str(self.tool_clip_file_path)
         # Run testscript
-        import commands.stpscript
+        import .stpscript
 
 
     def on_create(self, command, inputs):

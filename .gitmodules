@@ -4,3 +4,6 @@
 [submodule "cadquery"]
 	path = cadquery
 	url = git@github.com:CadQuery/cadquery.git
+[submodule "OCP"]
+	path = OCP
+	url = git@github.com:CadQuery/OCP.git
