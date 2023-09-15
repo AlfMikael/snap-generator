@@ -133,25 +133,17 @@ def build(args, preview=False):
         pos_parameters = ["x_location", "y_location"]
         parameters = {}
         
-        # Extracting the value parameters from all parameters
+        # Extracting only the parameters with number values
         value_parameters = list(set(parameter_ids) - set(pos_parameters))
-        
         loop_keys = list(value_parameters)
         try:
             for par_id in loop_keys:
-                #ui.messageBox("par_id: " + str(par_id))
-                #output_string = f"""Number of inputs: {inputs.count} \n
-                #                """ 
-                
-                output_string = f"""Trying to retrieve input with the id: {par_id} \n
-                                """                 
-                #ui.messageBox(output_string)
-                                
-                
                 item = inputs.itemById(par_id)
                 if item is None:
                     continue
-                
+
+                # For an unknown reason, the values from the inputCommands that
+                # has 'mm' as a unit, give 1/10 of the valued typed by user.
                 if par_id not in params_that_are_ok:
                     parameters[par_id] = item.value*10
                 else:
@@ -168,21 +160,24 @@ def build(args, preview=False):
             logger.error(f"Something went wrong with creating"
                   f" parameter {par_id}")
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-        
-        parameters["preview"] = preview
+
+        # To prevent an additional preview version of the component beingg
+        # generated on clicking 'OK'
         global previous_parameters
-        if preview and previous_parameters != parameters:
+        if preview and previous_parameters == parameters:
             return
 
-        cantilever = get_cantilever(parameters).item(0)
+        cantilever = get_cantilever(parameters).item(0).component # Component
+
+        # Add parameters to description of newly created cantilever
         cantilever_description_keys = ["length", "thickness",
                                        "extrusion_distance",
                                        "strain", "nose_angle"]
         description_dict = {x: parameters[x] for x in
                             cantilever_description_keys}
-        cantilever.component.description = str(description_dict)
-        # ui.messageBox("Cantilever properties" + str(cantilever.component.description))
+        cantilever.description = str(description_dict)
 
+        # ui.messageBox("Cantilever properties" + str(cantilever.component.description))
         # ui.messageBox("parameters were the same!\n" + str(parameters))
 
         previous_parameters = parameters.copy()
