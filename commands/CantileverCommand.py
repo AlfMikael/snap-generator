@@ -17,7 +17,7 @@ from .snap.control import ProfileSwitcher, ProfileModifier, validate_json
 from .snap.control import ProfileException
 from ..lib import appdirs
 
-import testing2
+from test_lib import get_cantilever
 
 app = adsk.core.Application.get()
 ui = app.userInterface
@@ -173,7 +173,7 @@ def build(args, preview=False):
         global previous_parameters
         
         if not preview: # Delete the 'preview cantilever'
-            testing2.get_cantilever(parameters)
+            get_cantilever(parameters)
             # pos = design.timeline.markerPosition
             # cantilever = design.timeline.item(pos-1)
             global execute_triggered
@@ -183,7 +183,7 @@ def build(args, preview=False):
         else:
             if preview:
                 if previous_parameters != parameters:
-                    testing2.get_cantilever(parameters)
+                    get_cantilever(parameters)
                     ui.messageBox("parameters were the same!\n" + str(parameters))
         
         
