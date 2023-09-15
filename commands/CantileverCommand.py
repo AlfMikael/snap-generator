@@ -27,78 +27,78 @@ execute_triggered = False
 previous_parameters = None
 
 
-def build_old(args, preview=False):
-    try:
-        logger = logging.getLogger("build-function")
-        logger.debug("Build initiated.")
-        design = adsk.fusion.Design.cast(app.activeProduct)
-        rootComp = design.rootComponent
-        inputs = args.command.commandInputs
-
-        # Build parameters
-        parameter_ids = list(Cantilever.get_parameter_dict().keys())
-        pos_parameters = ["x_location", "y_location"]
-        parameters = {}
-
-        # Extracting the value parameters from all parameters
-        value_parameters = list(set(parameter_ids) - set(pos_parameters))
-        try:
-            for par_id in value_parameters:
-                par_value = inputs.itemById(par_id).value
-                parameters[par_id] = par_value
-            for par_id in pos_parameters:
-                position = inputs.itemById(par_id).selectedItem.name
-                parameters[par_id] = position
-        except:
-            logger.error(f"Something went wrong with creating"
-                          f" parameter {par_id}")
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-        joint_origin = None
-        joint_input = inputs.itemById("selected_origin")
-        if joint_input.selectionCount == 1:
-            joint_origin = joint_input.selection(0).entity
-
-        join_body = None
-        join_body_input = inputs.itemById("join_body")
-        if join_body_input.selectionCount == 1:
-            join_body = join_body_input.selection(0).entity
-
-        cut_body_input = inputs.itemById("cut_bodies")
-        cut_bodies = []
-        body_count = cut_body_input.selectionCount
-        for i in range(body_count):
-            body = cut_body_input.selection(i).entity
-            cut_bodies.append(body)
-
-            # Make cut bodies transparent in preview mode
-            if preview:
-                body.opacity = 0.5
-
-        # Performing the actual operations
-        timeline_start = design.timeline.markerPosition
-
-        cant = Cantilever(rootComp, parameters,
-                   target_joint_org=joint_origin,
-                   join_body=join_body,
-                   cut_bodies=cut_bodies)
-
-        # Remove the component if a join-body operation was performed
-        if join_body:
-            rootComp.features.removeFeatures.add(cant.occurrence)
-
-        timeline_end = design.timeline.markerPosition
-        timeline_group = design.timeline.timelineGroups.add(timeline_start,
-                                                            timeline_end-1)
-        timeline_group.name = "Cantilever"
-
-        logger.info(f"Build succeeded.")
-
-    except:
-        if ui:
-            logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
+# def build_old(args, preview=False):
+#     try:
+#         logger = logging.getLogger("build-function")
+#         logger.debug("Build initiated.")
+#         design = adsk.fusion.Design.cast(app.activeProduct)
+#         rootComp = design.rootComponent
+#         inputs = args.command.commandInputs
+#
+#         # Build parameters
+#         parameter_ids = list(Cantilever.get_parameter_dict().keys())
+#         pos_parameters = ["x_location", "y_location"]
+#         parameters = {}
+#
+#         # Extracting the value parameters from all parameters
+#         value_parameters = list(set(parameter_ids) - set(pos_parameters))
+#         try:
+#             for par_id in value_parameters:
+#                 par_value = inputs.itemById(par_id).value
+#                 parameters[par_id] = par_value
+#             for par_id in pos_parameters:
+#                 position = inputs.itemById(par_id).selectedItem.name
+#                 parameters[par_id] = position
+#         except:
+#             logger.error(f"Something went wrong with creating"
+#                           f" parameter {par_id}")
+#             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+#
+#         joint_origin = None
+#         joint_input = inputs.itemById("selected_origin")
+#         if joint_input.selectionCount == 1:
+#             joint_origin = joint_input.selection(0).entity
+#
+#         join_body = None
+#         join_body_input = inputs.itemById("join_body")
+#         if join_body_input.selectionCount == 1:
+#             join_body = join_body_input.selection(0).entity
+#
+#         cut_body_input = inputs.itemById("cut_bodies")
+#         cut_bodies = []
+#         body_count = cut_body_input.selectionCount
+#         for i in range(body_count):
+#             body = cut_body_input.selection(i).entity
+#             cut_bodies.append(body)
+#
+#             # Make cut bodies transparent in preview mode
+#             if preview:
+#                 body.opacity = 0.5
+#
+#         # Performing the actual operations
+#         timeline_start = design.timeline.markerPosition
+#
+#         cant = Cantilever(rootComp, parameters,
+#                    target_joint_org=joint_origin,
+#                    join_body=join_body,
+#                    cut_bodies=cut_bodies)
+#
+#         # Remove the component if a join-body operation was performed
+#         if join_body:
+#             rootComp.features.removeFeatures.add(cant.occurrence)
+#
+#         timeline_end = design.timeline.markerPosition
+#         timeline_group = design.timeline.timelineGroups.add(timeline_start,
+#                                                             timeline_end-1)
+#         timeline_group.name = "Cantilever"
+#
+#         logger.info(f"Build succeeded.")
+#
+#     except:
+#         if ui:
+#             logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
+#             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+#
 
 def build(args, preview=False):
     try:
@@ -165,31 +165,27 @@ def build(args, preview=False):
             #ui.messageBox("Parameters were loaded:" + str(parameters))
 
         except:
-                    logger.error(f"Something went wrong with creating"
-                          f" parameter {par_id}")
-                    ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            logger.error(f"Something went wrong with creating"
+                  f" parameter {par_id}")
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
         
         parameters["preview"] = preview
         global previous_parameters
-        
-        if not preview: # Delete the 'preview cantilever'
-            get_cantilever(parameters)
-            # pos = design.timeline.markerPosition
-            # cantilever = design.timeline.item(pos-1)
-            global execute_triggered
-            
-            execute_triggered = True
-            ui.messageBox(str(parameters))
-        else:
-            if preview:
-                if previous_parameters != parameters:
-                    get_cantilever(parameters)
-                    ui.messageBox("parameters were the same!\n" + str(parameters))
-        
-        
+        if preview and previous_parameters != parameters:
+            return
+
+        cantilever = get_cantilever(parameters).item(0)
+        cantilever_description_keys = ["length", "thickness",
+                                       "extrusion_distance",
+                                       "strain", "nose_angle"]
+        description_dict = {x: parameters[x] for x in
+                            cantilever_description_keys}
+        cantilever.component.description = str(description_dict)
+        # ui.messageBox("Cantilever properties" + str(cantilever.component.description))
+
+        # ui.messageBox("parameters were the same!\n" + str(parameters))
+
         previous_parameters = parameters.copy()
-        
-        
         
     except:
         if ui:
