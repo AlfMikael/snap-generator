@@ -17,7 +17,7 @@ from .snap.control import ProfileSwitcher, ProfileModifier, validate_json
 from .snap.control import ProfileException
 from ..lib import appdirs
 
-from test_lib import get_cantilever
+from .test_lib import get_cantilever
 
 app = adsk.core.Application.get()
 ui = app.userInterface
