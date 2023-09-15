@@ -1,6 +1,3 @@
 [submodule "apper"]
 	path = apper
 	url = https://github.com/tapnair/apper
-[submodule "cadquery"]
-	path = cadquery
-	url = git@github.com:CadQuery/cadquery.git

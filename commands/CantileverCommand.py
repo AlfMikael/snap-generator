@@ -17,12 +17,17 @@ from .snap.control import ProfileSwitcher, ProfileModifier, validate_json
 from .snap.control import ProfileException
 from ..lib import appdirs
 
+import testing2
+
 app = adsk.core.Application.get()
 ui = app.userInterface
 handlers = []
 
+execute_triggered = False
+previous_parameters = None
 
-def build(args, preview=False):
+
+def build_old(args, preview=False):
     try:
         logger = logging.getLogger("build-function")
         logger.debug("Build initiated.")
@@ -89,6 +94,103 @@ def build(args, preview=False):
 
         logger.info(f"Build succeeded.")
 
+    except:
+        if ui:
+            logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+def build(args, preview=False):
+    try:
+        logger = logging.getLogger("build-function")
+        logger.debug("Build initiated.")
+        
+        
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        rootComp = design.rootComponent
+        inputs = args.command.commandInputs
+        
+        params_that_are_ok = ["strain", "nose_angle"]
+        
+        parameter_ids = {
+            "inner_radius": (float, int),
+            "strain": (float, int),
+            "extrusion_distance": (float, int),
+            "thickness": (float, int),
+            "length": (float, int),
+            "width": (float, int),
+            "ledge": (float, int),
+            "middle_padding": (float, int),
+            "nose_angle": (float, int),
+            "gap_length": (float, int),
+            "gap_thickness": (float, int),
+            "gap_extrusion": (float, int),
+            "extra_length": (float, int),
+            "x_location": (str,),
+            "y_location": (str,)
+        }
+        
+        pos_parameters = ["x_location", "y_location"]
+        parameters = {}
+        
+        # Extracting the value parameters from all parameters
+        value_parameters = list(set(parameter_ids) - set(pos_parameters))
+        
+        loop_keys = list(value_parameters)
+        try:
+            for par_id in loop_keys:
+                #ui.messageBox("par_id: " + str(par_id))
+                #output_string = f"""Number of inputs: {inputs.count} \n
+                #                """ 
+                
+                output_string = f"""Trying to retrieve input with the id: {par_id} \n
+                                """                 
+                #ui.messageBox(output_string)
+                                
+                
+                item = inputs.itemById(par_id)
+                if item is None:
+                    continue
+                
+                if par_id not in params_that_are_ok:
+                    parameters[par_id] = item.value*10
+                else:
+                    parameters[par_id] = item.value
+                
+                
+            #for par_id in pos_parameters:
+            #    position = inputs.itemById(par_id).selectedItem.name
+            #    parameters[par_id] = position
+            
+            #ui.messageBox("Parameters were loaded:" + str(parameters))
+
+        except:
+                    logger.error(f"Something went wrong with creating"
+                          f" parameter {par_id}")
+                    ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+        
+        parameters["preview"] = preview
+        global previous_parameters
+        
+        if not preview: # Delete the 'preview cantilever'
+            testing2.get_cantilever(parameters)
+            # pos = design.timeline.markerPosition
+            # cantilever = design.timeline.item(pos-1)
+            global execute_triggered
+            
+            execute_triggered = True
+            ui.messageBox(str(parameters))
+        else:
+            if preview:
+                if previous_parameters != parameters:
+                    testing2.get_cantilever(parameters)
+                    ui.messageBox("parameters were the same!\n" + str(parameters))
+        
+        
+        previous_parameters = parameters.copy()
+        
+        
+        
     except:
         if ui:
             logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
@@ -293,9 +395,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
         super().on_run()
         # The image that pops up when hovering over the command icon
         self.command_definition.toolClipFilename = str(self.tool_clip_file_path)
-        # Run testscript
-        import .stpscript
-
 
     def on_create(self, command, inputs):
         # Logging
@@ -378,6 +477,10 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.logger.debug("Finished handlers.")
 
         self.logger.info("Opened command window.")
+        
+        global execute_triggered
+        execute_triggered = False
+        
 
     def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
                    reason: adsk.core.CommandTerminationReason, input_values: dict):
