@@ -181,18 +181,12 @@ def import_part(name):
 def build_preview(args, preview=False):
     # return
     global first_execute_started
-    execute = not preview
 
     inputs = args.command.commandInputs
     design = adsk.fusion.Design.cast(app.activeProduct)
-    body_count = inputs.itemById("cut_bodies").selectionCount
     #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
 
 
-#    if not first_execute:
- #       return
-
-    # Retrieve parameters from arguments
 
     timeline_start = design.timeline.markerPosition
 
@@ -228,57 +222,13 @@ def build_preview(args, preview=False):
                   f" parameter {par_id}")
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-        # To prevent an additional preview version of the component being
-        # generated on clicking 'OK'
-
-        ###### Begin HACK
-        # This is to prevent preview from being generated an additional
-        # time when clicking OK. However it is necessary to isolate this exact
-        # condition, hence the code below. Without this, the part will fail to
-        # generate a preview when selecting joint_origin or cut or join body.
-        # todo: include for all selected cut_bodies. Now it fails to regenerate
-        # for all
-        current_selections = set()
-        if inputs.itemById("selected_origin").selectionCount == 1:
-            org_selection = inputs.itemById("selected_origin").selection(0)
-            entity = org_selection.entity
-            current_selections.add(entity.name)
-
-        if inputs.itemById("cut_bodies").selectionCount > 0:
-            cut_body_selection = inputs.itemById("cut_bodies").selection(0)
-            entity = cut_body_selection.entity
-            current_selections.add(entity.name)
-
-        if inputs.itemById("join_body").selectionCount == 1:
-            join_body_selection = inputs.itemById("join_body").selection(0)
-            entity = join_body_selection.entity
-            current_selections.add(entity.name)
-        #ui.messageBox(f"SECOND: {preview=} of cut bodies selected: {body_count}")
 
         if SHOW_BOXES:
-            ui.messageBox(f"SECOND: {execute=},"
+            ui.messageBox(f"SECOND: (preview),"
                       f" {first_execute_started=},"
                       f" {second_execute_started=}")
 
-        global previous_parameters
-        global previous_selections
 
-        # if preview and previous_parameters == parameters:
-        #     if previous_selections == current_selections:
-        #         return
-
-        # ui.messageBox(f"THIRD: {preview=} of cut bodies selected: {body_count}")
-
-        previous_selections = current_selections
-        previous_parameters = parameters.copy()
-        #global first_execute
-
-        #### END HACK
-
-        # if its_time_to_stop:
-        #     return
-
-        it_crashed = False
         generate_cantilever(parameters)
         #ui.messageBox("Parameters for cadquery:" + str(parameters))
         try:
@@ -287,7 +237,7 @@ def build_preview(args, preview=False):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
         if SHOW_BOXES:
-            ui.messageBox(f"THIRD: {execute=},"
+            ui.messageBox(f"THIRD: (preview),"
                           f" {first_execute_started=},"
                           f" {second_execute_started}"
                           )
