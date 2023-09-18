@@ -406,6 +406,7 @@ def build_preview(args, preview=False):
                                        "strain", "nose_angle"]
         description_dict = {x: parameters[x] for x in
                             cantilever_description_keys}
+        cantilever.description = str(description_dict)
 
     except:
         if ui:
@@ -414,33 +415,22 @@ def build_preview(args, preview=False):
 
 
 def build_execute(args, preview=False):
-
-    global first_execute_started
-    execute = not preview
-    first_execute_started = True
-
     design = adsk.fusion.Design.cast(app.activeProduct)
     timeline_start = design.timeline.markerPosition
-
     #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
 
-    parameters = BASE_PARAMETERS.copy() # For external calls
+    parameters = BASE_PARAMETERS.copy()
     name = parameters["name"]
 
-    perform_delete = False
     try:
         import_part(name)
-        object = design.timeline.item(timeline_start - 1)
-        object.deleteMe(True)
-
         if SHOW_BOXES:
             ui.messageBox(f"{preview}, IMPORT CRASH")
     except:
-        ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
+        design.timeline.item(timeline_start).deleteMe(True)
 
     if SHOW_BOXES:
-        ui.messageBox(f"THIRD: {execute=},"
+        ui.messageBox(f"THIRD: (execute),"
                       f" {first_execute_started=},"
                       f" {second_execute_started}",
                       f" {its_time_to_stop=}",
