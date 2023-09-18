@@ -323,25 +323,24 @@ def build_preview(args, preview=False):
                       f" {first_execute_started=},")
 
 
+        # Create and import cantilever, then expand group
         generate_cantilever(parameters)
+        cantilever_occurrence = import_part(parameters["name"]).item(0)
+        cantilever = cantilever_occurrence.component  # Component
+        timeline_groups = design.timeline.timelineGroups
+        last_group_index = timeline_groups.count - 1
+        timeline_groups.item(last_group_index).deleteMe(False)
 
-        #ui.messageBox("Parameters for cadquery:" + str(parameters))
-        try:
-            cantilever_occurrence = import_part(parameters["name"]).item(0)
-            cantilever = cantilever_occurrence.component  # Component
 
-            anticantilever = None
-            if include_subtractive_body:
-                generate_anticantilever(parameters)
-                anticantilever = import_part(parameters["antiname"]).item(0)
+        # Create and import ANTIcantilever, then expand group
+        anticantilever_occurrence = None
+        if include_subtractive_body:
+            generate_anticantilever(parameters)
+            anticantilever_occurrence = import_part(parameters["antiname"]).item(0)
+            timeline_groups = design.timeline.timelineGroups
+            last_group_index = timeline_groups.count - 1
+            timeline_groups.item(last_group_index).deleteMe(False)
 
-        except:
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-        if SHOW_BOXES:
-            ui.messageBox(f"THIRD: (preview),"
-                          f" {first_execute_started=}"
-                          )
 
         # Join joint origins if they exist
         joint_input = inputs.itemById("selected_origin")
@@ -420,6 +419,15 @@ def build_preview(args, preview=False):
         # Add properties to cantilever component
         # only works if cantilever is still a component
         #ui.messageBox(f"Is cantilever valid? {str(cantilever.isValid)}")
+        if anticantilever_occurrence:
+            features = root_comp.features
+            removeFeatures = features.removeFeatures
+            removeFeatures.add(anticantilever_occurrence)
+        # Remove anticantilever from timeline
+
+        #group = timeline_groups.add(timeline_start, last_timeline_pos)
+        #group.name = "Cantilever Snap Fit: " + str(description_dict)
+
         cantilever_description_keys = ["length", "thickness",
                                        "width",
                                        "strain", "nose_angle"]
@@ -427,15 +435,15 @@ def build_preview(args, preview=False):
                             cantilever_description_keys}
         cantilever.description = str(description_dict)
 
-        # Pack up everything neatly in timeline
-        # Open up import group
-        timeline_groups = design.timeline.timelineGroups
-        last_group_index = timeline_groups.count - 1
-        timeline_groups.item(last_group_index).deleteMe(False)
-
         last_timeline_pos = design.timeline.markerPosition - 1
-        #group = timeline_groups.add(timeline_start, last_timeline_pos)
-        #group.name = "Cantilever Snap Fit: " + str(description_dict)
+        ui.messageBox(f"Trying to create timeline groups from"
+                      f" start: {timeline_start} to end: {last_timeline_pos}")
+        new_group = timeline_groups.add(timeline_start, last_timeline_pos)
+        new_group.name = "Cantilever snap fit: " + str(description_dict)
+
+        # Remove anticantilever
+        # Remove cantilever component
+
 
 
     except:
