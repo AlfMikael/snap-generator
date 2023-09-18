@@ -34,9 +34,17 @@ BASE_PARAMETERS["thickness"] = 4
 BASE_PARAMETERS["width"] = 8
 BASE_PARAMETERS["length"] = 12
 BASE_PARAMETERS["strain"] = 0.04
-BASE_PARAMETERS["nose_angle"] = math.radians(85)
+BASE_PARAMETERS["nose_angle"] = math.radians(60)
 BASE_PARAMETERS["name"] = "default_cantilever"
+BASE_PARAMETERS["antiname"] = "default_anticantilever"
+
 BASE_PARAMETERS["r_top"] = 1.5
+# Gap parameters
+BASE_PARAMETERS["gap_length"] = 0.2
+BASE_PARAMETERS["gap_thickness"] = 0.2
+BASE_PARAMETERS["gap_width"] = 0.2
+BASE_PARAMETERS["gap_legth"] = 0.15
+BASE_PARAMETERS["extra_length"] = 0.5
 
 PARAMETERS = {
     "inner_radius": (float, int),
@@ -83,8 +91,10 @@ MULTIPLY10_KEYS = [
 ]
 SHOW_BOXES = False
 
+first_preview = True
+first_execute_started = False
 
-def generate_cantilever(params):
+def generate_cantilever(params: dict):
     # Step 1: Set variables to parameters
     p = BASE_PARAMETERS.copy()
     p.update(params)
@@ -151,6 +161,71 @@ def generate_cantilever(params):
     stepfile.save(fname)
 
 
+def generate_anticantilever(params: dict):
+    # Step 1: Set variables to parameters
+    p = BASE_PARAMETERS.copy()
+    p.update(params)
+
+    relevant_params = ["thickness", "length", "strain", "nose_angle",
+                       "width", "r_top", "name"]
+    gap_params = ["gap_length", "gap_thickness", "gap_width", "extra_length",
+                  "gap_length"]
+
+
+    antiname = p["antiname"]
+    th, l, strain, nose_angle, width, r_top, name = [p[x] for x in
+                                                     relevant_params]
+
+    gap_l, gap_th, gap_width, extra_length, gap_length = [p[x] for x in
+                                                          gap_params]
+
+    nose_angle = math.radians(nose_angle)
+    nose_height = 1.09 * strain * l ** 2 / th
+    nose_x = nose_height / math.tan(nose_angle)
+
+    # Step 2: Draw straight lines
+    point_data = ([(0, -gap_th),  # Starts at bottom
+                   (l * 1.20 + extra_length, 1 / 2 * th * 1.25 - gap_th),
+                   (l * 1.20 + extra_length, 3 / 4 * th),
+                   (l * 1.07 + extra_length, th + nose_height + gap_th),
+                   (l - gap_length, th + nose_height + gap_th),
+                   (l - nose_x - gap_length, th + gap_th),
+                   (r_top, th + gap_th),
+                   (0, th + r_top + gap_th)
+                   ])
+    x = [point[0] for point in point_data]
+    y = [point[1] for point in point_data]
+
+    part = (
+        cq.Workplane("XY")
+            .moveTo(x[0], y[0])
+    )
+    for i in range(1, len(x)):
+        part = part.lineTo(x[i], y[i])
+
+    # Step 4: close the curve and extrude
+    part = part.close()
+    part = part.extrude(width / 2 + gap_width, both=True)
+
+    # Step 5: Position part so that origin is in the intended center of part
+    part = part.translate((0, -th / 2, 0))
+
+    # Step : Export file
+    cq.exporters.export(part, antiname + ".step")
+
+    # Open stepfile to edit
+    from steputils import p21
+
+    fname = antiname + ".step"
+    stepfile = p21.readfile(fname)
+
+    product = stepfile.data[0].get("#7")
+    product.entity.params = (antiname,)
+
+    stepfile.save(fname)
+
+
+
 def import_part(name):
     # Import part to Fusion 360
     app = adsk.core.Application.get()
@@ -187,11 +262,31 @@ def build_preview(args, preview=False):
     #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
 
 
-
     timeline_start = design.timeline.markerPosition
 
     parameters = BASE_PARAMETERS.copy() # For external calls
     fusion_parameters = {}              # For internal calls
+
+    # Deselect al bodies and joint origins when first opening menu
+    global first_preview
+    if first_preview:
+        first_preview = False
+        inputs.itemById("cut_bodies").hasFocus = False
+        inputs.itemById("join_body").hasFocus = False
+        inputs.itemById("selected_origin").hasFocus = False
+
+
+
+    # Determine whether or not a subtractive body should be produced
+    # todo: include checklist button in UI
+    # if there are any subtraction bodies then yes
+    if inputs.itemById("cut_bodies").selectionCount > 0:
+        include_subtractive_body = True
+    else:
+        include_subtractive_body = False
+
+
+
 
     try:
         logger = logging.getLogger("build-function")
@@ -225,29 +320,28 @@ def build_preview(args, preview=False):
 
         if SHOW_BOXES:
             ui.messageBox(f"SECOND: (preview),"
-                      f" {first_execute_started=},"
-                      f" {second_execute_started=}")
+                      f" {first_execute_started=},")
 
 
         generate_cantilever(parameters)
+
         #ui.messageBox("Parameters for cadquery:" + str(parameters))
         try:
-            cantilever = import_part(parameters["name"]).item(0).component  # Component
+            cantilever_occurrence = import_part(parameters["name"]).item(0)
+            cantilever = cantilever_occurrence.component  # Component
+
+            anticantilever = None
+            if include_subtractive_body:
+                generate_anticantilever(parameters)
+                anticantilever = import_part(parameters["antiname"]).item(0)
+
         except:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
         if SHOW_BOXES:
             ui.messageBox(f"THIRD: (preview),"
-                          f" {first_execute_started=},"
-                          f" {second_execute_started}"
+                          f" {first_execute_started=}"
                           )
-
-        # cantilever_description_keys = ["length", "thickness",
-        #                                "width",
-        #                                "strain", "nose_angle"]
-        # description_dict = {x: parameters[x] for x in
-        #                     cantilever_description_keys}
-        # cantilever.description = str(description_dict)
 
         # Join joint origins if they exist
         joint_input = inputs.itemById("selected_origin")
@@ -318,18 +412,31 @@ def build_preview(args, preview=False):
             combine_input.operation = JoinFeatureOperation
             combineFeatures.add(combine_input)
 
-        # Perform
+            # Remove cantilever component
+            features = root_comp.features
+            removeFeatures = features.removeFeatures
+            removeFeatures.add(cantilever_occurrence)
 
-
-        # Finally fix everything up in the timeline
-        timeline_end = design.timeline.markerPosition
-
+        # Add properties to cantilever component
+        # only works if cantilever is still a component
+        #ui.messageBox(f"Is cantilever valid? {str(cantilever.isValid)}")
         cantilever_description_keys = ["length", "thickness",
                                        "width",
                                        "strain", "nose_angle"]
         description_dict = {x: parameters[x] for x in
                             cantilever_description_keys}
         cantilever.description = str(description_dict)
+
+        # Pack up everything neatly in timeline
+        # Open up import group
+        timeline_groups = design.timeline.timelineGroups
+        last_group_index = timeline_groups.count - 1
+        timeline_groups.item(last_group_index).deleteMe(False)
+
+        last_timeline_pos = design.timeline.markerPosition - 1
+        #group = timeline_groups.add(timeline_start, last_timeline_pos)
+        #group.name = "Cantilever Snap Fit: " + str(description_dict)
+
 
     except:
         if ui:
@@ -345,6 +452,9 @@ def build_execute(args, preview=False):
     parameters = BASE_PARAMETERS.copy()
     name = parameters["name"]
 
+    global first_execute_started
+    first_execute_started = True
+
     try:
         import_part(name)
         if SHOW_BOXES:
@@ -355,7 +465,6 @@ def build_execute(args, preview=False):
     if SHOW_BOXES:
         ui.messageBox(f"THIRD: (execute),"
                       f" {first_execute_started=},"
-                      f" {second_execute_started}"
                       )
 
 
@@ -519,7 +628,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.log_path = logs_folder / "CantileverCommand.log"
 
         self.profiles_path = config_folder / "Profile Data" / "CantileverCommand.json"
-        ui.messageBox(str(self.profiles_path))
+
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -643,16 +752,13 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
         # Reset previous parameters to avoid non-generation of cantilever
         # when opening commmand window
-        global previous_parameters
-        global previous_selections
+        # To keep track of whether or not the preview function
+        # has been run before
+        global first_preview
         global first_execute_started
-        global second_execute_started
-        previous_parameters = None
-        previous_selections = None
-        first_execute_started = False
-        second_execute_started = False
-
         first_preview = True
+        first_execute_started = False
+
 
     def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
                    reason: adsk.core.CommandTerminationReason, input_values: dict):
