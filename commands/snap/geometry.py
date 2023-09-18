@@ -129,9 +129,9 @@ class BaseSnap:
     def _create_cut_body(self, parameters, sketch):
         gap = parameters['gap_extrusion']
         if self.gap_in_cut_body:
-            extrusion_distance = parameters['extrusion_distance'] + 2 * gap
+            extrusion_distance = parameters['width'] + 2 * gap
         else:
-            extrusion_distance = parameters['extrusion_distance']
+            extrusion_distance = parameters['width']
 
         profile = sketch.profiles[0]
 
@@ -154,7 +154,7 @@ class BaseSnap:
         return body
 
     def _create_join_body(self, parameters, sketch):
-        extrusion_distance = parameters['extrusion_distance']
+        extrusion_distance = parameters['width']
         gap = parameters['gap_extrusion']
 
         if self.gap_in_cut_body:
@@ -392,7 +392,7 @@ class Cantilever(BaseSnap):
             "top_radius": (float, int),
             "bottom_radius": (float, int),
             "strain": (float, int),
-            "extrusion_distance": (float, int),
+            "width": (float, int),
             "thickness": (float, int),
             "length": (float, int),
             "nose_angle": (float, int),
@@ -406,7 +406,7 @@ class Cantilever(BaseSnap):
         return PARAMETERS
 
     def _get_offsets(self, parameters):
-        ex_dist = parameters['extrusion_distance']
+        ex_dist = parameters['width']
         bot_rad = parameters['bottom_radius']
         thickness = parameters['thickness']
         theta = math.atan(parameters['length'] / (parameters['thickness'] / 2))
@@ -416,7 +416,7 @@ class Cantilever(BaseSnap):
 
         x_loc = parameters["x_location"]
         y_loc = parameters["y_location"]
-        extrusion_distance = parameters["extrusion_distance"]
+        extrusion_distance = parameters["width"]
 
         if x_loc == "top":
             x_offset = extrusion_distance
@@ -593,7 +593,7 @@ class CantileverPin(BaseSnap):
         PARAMETERS = {
             "inner_radius": (float, int),
             "strain": (float, int),
-            "extrusion_distance": (float, int),
+            "width": (float, int),
             "thickness": (float, int),
             "length": (float, int),
             "width": (float, int),
@@ -618,7 +618,7 @@ class CantileverPin(BaseSnap):
         """
         x_loc = parameters["x_location"]
         y_loc = parameters["y_location"]
-        extrusion_distance = parameters["extrusion_distance"]
+        extrusion_distance = parameters["width"]
         width = parameters["width"]
         gap_extrusion = parameters["gap_extrusion"]
         x_offset = 0

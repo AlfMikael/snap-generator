@@ -25,6 +25,8 @@ first_timeline_object_index = [0]
 
 
 def build(args, preview=False):
+
+    ui.messageBox(f"build activated, {preview=}")
     try:
         logger = logging.getLogger("build")
         logger.debug("Build function initiated.")

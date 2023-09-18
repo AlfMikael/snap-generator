@@ -19,9 +19,6 @@ BASE_PARAMETERS["strain"] = 0.04
 BASE_PARAMETERS["nose_angle"] = 85
 BASE_PARAMETERS["name"] = "default_cantilever"
 
-
-
-
 def create_cantilever(modified_parameters=dict()):
     p = BASE_PARAMETERS.copy()
     p.update(modified_parameters)
@@ -116,39 +113,6 @@ def import_step_file(modified_parameters=dict()):
             ui.messageBox('Import step file Failed:\n{}'.format(traceback.format_exc()))
 
 
-def import_step_file2(modified_parameters=dict()):
-
-    p = modified_parameters
-    name = p["name"]
-
-    # Import part to Fusion 360
-    ui = None
-    imported_object = None
-    try:
-        app = adsk.core.Application.get()
-        ui = app.userInterface
-        # Get import manager
-        importManager = app.importManager
-
-        # Get active design
-        product = app.activeProduct
-        design = adsk.fusion.Design.cast(product)
-
-        # Get root component
-        rootComp = design.rootComponent
-
-        # Get step import options
-        stpFileName = name + ".step"
-        stpOptions = importManager.createSTEPImportOptions(stpFileName)
-        stpOptions.isViewFit = False
-
-        # Import step file to root component
-        imported_object = importManager.importToTarget2(stpOptions, rootComp)
-        return imported_object
-    except:
-        if ui:
-            ui.messageBox('Import step file Failed:\n{}'.format(traceback.format_exc()))
-            #ui.messageBox("object:" + str(imported_object.asArray()))
 
 
 def get_cantilever(modified_parameters=dict()):

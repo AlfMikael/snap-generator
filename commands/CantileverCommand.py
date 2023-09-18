@@ -2,6 +2,8 @@ import adsk.core
 import adsk.fusion
 import adsk.cam
 from adsk.core import SelectionCommandInput, DropDownStyles
+from adsk.core import ValueInput as valueInput
+from adsk.fusion import Component
 
 import traceback
 import json
@@ -19,173 +21,431 @@ from ..lib import appdirs
 
 from .test_lib import get_cantilever
 
+import cadquery as cq
+
+import math
+
 app = adsk.core.Application.get()
 ui = app.userInterface
 handlers = []
 
+import time
+
 execute_triggered = False
 previous_parameters = None
+previous_selections = set()
+its_time_to_stop = False
+first_execute_started = False
+second_execute_started = False
 
 
-# def build_old(args, preview=False):
-#     try:
-#         logger = logging.getLogger("build-function")
-#         logger.debug("Build initiated.")
-#         design = adsk.fusion.Design.cast(app.activeProduct)
-#         rootComp = design.rootComponent
-#         inputs = args.command.commandInputs
-#
-#         # Build parameters
-#         parameter_ids = list(Cantilever.get_parameter_dict().keys())
-#         pos_parameters = ["x_location", "y_location"]
-#         parameters = {}
-#
-#         # Extracting the value parameters from all parameters
-#         value_parameters = list(set(parameter_ids) - set(pos_parameters))
-#         try:
-#             for par_id in value_parameters:
-#                 par_value = inputs.itemById(par_id).value
-#                 parameters[par_id] = par_value
-#             for par_id in pos_parameters:
-#                 position = inputs.itemById(par_id).selectedItem.name
-#                 parameters[par_id] = position
-#         except:
-#             logger.error(f"Something went wrong with creating"
-#                           f" parameter {par_id}")
-#             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-#
-#         joint_origin = None
-#         joint_input = inputs.itemById("selected_origin")
-#         if joint_input.selectionCount == 1:
-#             joint_origin = joint_input.selection(0).entity
-#
-#         join_body = None
-#         join_body_input = inputs.itemById("join_body")
-#         if join_body_input.selectionCount == 1:
-#             join_body = join_body_input.selection(0).entity
-#
-#         cut_body_input = inputs.itemById("cut_bodies")
-#         cut_bodies = []
-#         body_count = cut_body_input.selectionCount
-#         for i in range(body_count):
-#             body = cut_body_input.selection(i).entity
-#             cut_bodies.append(body)
-#
-#             # Make cut bodies transparent in preview mode
-#             if preview:
-#                 body.opacity = 0.5
-#
-#         # Performing the actual operations
-#         timeline_start = design.timeline.markerPosition
-#
-#         cant = Cantilever(rootComp, parameters,
-#                    target_joint_org=joint_origin,
-#                    join_body=join_body,
-#                    cut_bodies=cut_bodies)
-#
-#         # Remove the component if a join-body operation was performed
-#         if join_body:
-#             rootComp.features.removeFeatures.add(cant.occurrence)
-#
-#         timeline_end = design.timeline.markerPosition
-#         timeline_group = design.timeline.timelineGroups.add(timeline_start,
-#                                                             timeline_end-1)
-#         timeline_group.name = "Cantilever"
-#
-#         logger.info(f"Build succeeded.")
-#
-#     except:
-#         if ui:
-#             logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
-#             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-#
 
-def build(args, preview=False):
+finished_runs = []
+
+
+BASE_PARAMETERS = {}
+BASE_PARAMETERS["thickness"] = 4
+BASE_PARAMETERS["width"] = 8
+BASE_PARAMETERS["length"] = 12
+BASE_PARAMETERS["strain"] = 0.04
+BASE_PARAMETERS["nose_angle"] = math.radians(85)
+BASE_PARAMETERS["name"] = "default_cantilever"
+BASE_PARAMETERS["r_top"] = 1.5
+
+PARAMETERS = {
+    "inner_radius": (float, int),
+    "strain": (float, int),
+    "thickness": (float, int),
+    "length": (float, int),
+    "width": (float, int),
+    "ledge": (float, int),
+    "middle_padding": (float, int),
+    "nose_angle": (float, int),
+    "gap_length": (float, int),
+    "gap_thickness": (float, int),
+    "gap_extrusion": (float, int),
+    "extra_length": (float, int),
+    "x_location": (str,),
+    "y_location": (str,),
+    "name": (str,)
+}
+VALUE_PARAMETERS = [
+    "inner_radius",
+    "strain",
+    "thickness",
+    "length",
+    "width",
+    "ledge",
+    "middle_padding",
+    "nose_angle",
+    "gap_length",
+    "gap_thickness",
+    "gap_extrusion",
+    "extra_length"
+]
+MULTIPLY10_KEYS = [
+    "inner_radius",
+    "thickness",
+    "length",
+    "width",
+    "ledge",
+    "middle_padding",
+    "gap_length",
+    "gap_thickness",
+    "gap_extrusion",
+    "extra_length"
+]
+SHOW_BOXES = False
+
+
+def generate_cantilever(params):
+    # Step 1: Set variables to parameters
+    p = BASE_PARAMETERS.copy()
+    p.update(params)
+
+    relevant_params = ["thickness", "length", "strain", "nose_angle",
+                       "width", "r_top", "name"]
+
+    th, l, strain, nose_angle, width, r_top, name = [p[x] for x in
+                                                     relevant_params]
+
+    nose_angle = math.radians(nose_angle)
+
+    nose_height = 1.09 * strain * l ** 2 / th
+    nose_x = nose_height / math.tan(nose_angle)
+
+    # Step 2: Draw straight lines
+    point_data = ([(0, 0),  # Starts at bottom
+               (l * 1.20 + nose_x, 1 / 2 * th * 1.25),
+               (l * 1.20 + nose_x, 3 / 4 * th),
+               (l * 1.07 + nose_x, th + nose_height),
+               (l + nose_x, th + nose_height),
+               (l, th),
+               (r_top, th)
+               ])
+    x = [point[0] for point in point_data]
+    y = [point[1] for point in point_data]
+
+    part = (
+        cq.Workplane("XY")
+            .moveTo(x[0], y[0])
+    )
+    for i in range(1, len(x)):
+        part = part.lineTo(x[i], y[i])
+
+    # Step 3: Create a radius arc
+    # An arc is drawn from p0 to p2
+    # To get the correct arc, an additional point (p1) must be identified
+    p2 = (0, th + r_top)  # Top of radius
+
+    deg = math.radians(10)  # An arbitrary angle on the arc
+    p1_x = r_top * (1 - math.sin(deg))
+    p1_y = r_top * (1 - math.cos(deg)) + th
+    p1 = (p1_x, p1_y)
+    part = part.threePointArc(p1, p2)
+
+    # Step 4: close the curve and extrude
+    part = part.close()
+    part = part.extrude(width / 2, both=True)
+
+    # Step 4: Position part so that origin is in the intended center of part
+    part = part.translate((0, -th / 2, 0))
+
+    # Step 5: Export file
+    cq.exporters.export(part, name + ".step")
+
+    # Open stepfile to edit
+    from steputils import p21
+    fname = name + ".step"
+    stepfile = p21.readfile(fname)
+
+    product = stepfile.data[0].get("#7")
+    product.entity.params = (name,)
+
+    stepfile.save(fname)
+
+
+
+
+
+def import_part(name):
+    # Import part to Fusion 360
+    app = adsk.core.Application.get()
+    ui = app.userInterface
+    # Get import manager
+    importManager = app.importManager
+
+    # Get active design
+    product = app.activeProduct
+    design = adsk.fusion.Design.cast(product)
+
+    # Get root component
+    # comp = design.rootComponent
+
+    # Get current active component
+    comp = design.rootComponent
+
+    # Get step import options
+    stpFileName = name + ".step"
+    stpOptions = importManager.createSTEPImportOptions(stpFileName)
+    stpOptions.isViewFit = False
+
+    # Import step file to root component
+    imported_comp = importManager.importToTarget2(stpOptions, comp)
+    return imported_comp
+
+
+    try:
+        app = adsk.core.Application.get()
+        ui = app.userInterface
+        # Get import manager
+        importManager = app.importManager
+
+        # Get active design
+        product = app.activeProduct
+        design = adsk.fusion.Design.cast(product)
+
+        # Get root component
+        # comp = design.rootComponent
+
+        # Get current active component
+        comp = design.activeComponent
+
+        # Get step import options
+        stpFileName = p["name"] + ".step"
+        stpOptions = importManager.createSTEPImportOptions(stpFileName)
+        stpOptions.isViewFit = False
+
+        # Import step file to root component
+        imported_comp = importManager.importToTarget2(stpOptions, comp)
+        return imported_comp
+
+    except:
+        if ui:
+            ui.messageBox('Import step file Failed:\n{}'.format(traceback.format_exc()))
+
+
+def build_preview(args, preview=False):
+    # return
+    global first_execute_started
+    execute = not preview
+
+    inputs = args.command.commandInputs
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    body_count = inputs.itemById("cut_bodies").selectionCount
+    #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
+
+
+#    if not first_execute:
+ #       return
+
+    # Retrieve parameters from arguments
+
+    timeline_start = design.timeline.markerPosition
+
+    parameters = BASE_PARAMETERS.copy() # For external calls
+    fusion_parameters = {}              # For internal calls
+
     try:
         logger = logging.getLogger("build-function")
         logger.debug("Build initiated.")
-        
-        
-        design = adsk.fusion.Design.cast(app.activeProduct)
-        rootComp = design.rootComponent
+
         inputs = args.command.commandInputs
-        
-        params_that_are_ok = ["strain", "nose_angle"]
-        
-        parameter_ids = {
-            "inner_radius": (float, int),
-            "strain": (float, int),
-            "extrusion_distance": (float, int),
-            "thickness": (float, int),
-            "length": (float, int),
-            "width": (float, int),
-            "ledge": (float, int),
-            "middle_padding": (float, int),
-            "nose_angle": (float, int),
-            "gap_length": (float, int),
-            "gap_thickness": (float, int),
-            "gap_extrusion": (float, int),
-            "extra_length": (float, int),
-            "x_location": (str,),
-            "y_location": (str,)
-        }
-        
-        pos_parameters = ["x_location", "y_location"]
-        parameters = {}
-        
-        # Extracting only the parameters with number values
-        value_parameters = list(set(parameter_ids) - set(pos_parameters))
-        loop_keys = list(value_parameters)
+        # Add parameters to dictionaries, making necessary adjustments
         try:
-            for par_id in loop_keys:
+            for par_id in PARAMETERS.keys():
                 item = inputs.itemById(par_id)
                 if item is None:
                     continue
-
-                # For an unknown reason, the values from the inputCommands that
-                # has 'mm' as a unit, give 1/10 of the valued typed by user.
-                if par_id not in params_that_are_ok:
-                    parameters[par_id] = item.value*10
+                if par_id in VALUE_PARAMETERS: # Value is gotten by .value
+                    fusion_parameters[par_id] = item.value
+                    if par_id in MULTIPLY10_KEYS:
+                        parameters[par_id] = item.value * 10
+                    else:
+                        parameters[par_id] = item.value
+                # If the parameter results from a 'selection' rather than
+                # a typed value
                 else:
-                    parameters[par_id] = item.value
-                
-                
-            #for par_id in pos_parameters:
-            #    position = inputs.itemById(par_id).selectedItem.name
-            #    parameters[par_id] = position
-            
-            #ui.messageBox("Parameters were loaded:" + str(parameters))
+                    value = item.selectedItem.name
+                    fusion_parameters[par_id] = value
+                    parameters[par_id] = value
 
         except:
             logger.error(f"Something went wrong with creating"
                   f" parameter {par_id}")
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-        # To prevent an additional preview version of the component beingg
+        # To prevent an additional preview version of the component being
         # generated on clicking 'OK'
+
+        ###### Begin HACK
+        # This is to prevent preview from being generated an additional
+        # time when clicking OK. However it is necessary to isolate this exact
+        # condition, hence the code below. Without this, the part will fail to
+        # generate a preview when selecting joint_origin or cut or join body.
+        # todo: include for all selected cut_bodies. Now it fails to regenerate
+        # for all
+        current_selections = set()
+        if inputs.itemById("selected_origin").selectionCount == 1:
+            org_selection = inputs.itemById("selected_origin").selection(0)
+            entity = org_selection.entity
+            current_selections.add(entity.name)
+
+        if inputs.itemById("cut_bodies").selectionCount > 0:
+            cut_body_selection = inputs.itemById("cut_bodies").selection(0)
+            entity = cut_body_selection.entity
+            current_selections.add(entity.name)
+
+        if inputs.itemById("join_body").selectionCount == 1:
+            join_body_selection = inputs.itemById("join_body").selection(0)
+            entity = join_body_selection.entity
+            current_selections.add(entity.name)
+        #ui.messageBox(f"SECOND: {preview=} of cut bodies selected: {body_count}")
+
+        if SHOW_BOXES:
+            ui.messageBox(f"SECOND: {execute=},"
+                      f" {first_execute_started=},"
+                      f" {second_execute_started=}")
+
         global previous_parameters
-        if preview and previous_parameters == parameters:
-            return
+        global previous_selections
 
-        cantilever = get_cantilever(parameters).item(0).component # Component
+        # if preview and previous_parameters == parameters:
+        #     if previous_selections == current_selections:
+        #         return
 
-        # Add parameters to description of newly created cantilever
+        # ui.messageBox(f"THIRD: {preview=} of cut bodies selected: {body_count}")
+
+        previous_selections = current_selections
+        previous_parameters = parameters.copy()
+        #global first_execute
+
+        #### END HACK
+
+        # if its_time_to_stop:
+        #     return
+
+        it_crashed = False
+        generate_cantilever(parameters)
+        #ui.messageBox("Parameters for cadquery:" + str(parameters))
+        try:
+            cantilever = import_part(parameters["name"]).item(0).component  # Component
+        except:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+        if SHOW_BOXES:
+            ui.messageBox(f"THIRD: {execute=},"
+                          f" {first_execute_started=},"
+                          f" {second_execute_started}",
+                          f" {its_time_to_stop=}",
+                          )
+
+        # cantilever_description_keys = ["length", "thickness",
+        #                                "width",
+        #                                "strain", "nose_angle"]
+        # description_dict = {x: parameters[x] for x in
+        #                     cantilever_description_keys}
+        # cantilever.description = str(description_dict)
+
+        # Join joint origins if they exist
+        joint_input = inputs.itemById("selected_origin")
+        if joint_input.selectionCount == 1:
+            selected_joint_origin = joint_input.selection(0).entity
+
+            jointGeometry = adsk.fusion.JointGeometry
+            jointOrigins = cantilever.jointOrigins
+            point = cantilever.originConstructionPoint
+            geo = jointGeometry.createByPoint(point)
+            joint_origin_input = jointOrigins.createInput(geo)
+            joint_origin_input.xAxisEntity = cantilever.yConstructionAxis
+            joint_origin_input.zAxisEntity = cantilever.xConstructionAxis
+
+            # Joint origin on cantilever part
+            joint_origin = jointOrigins.add(joint_origin_input)
+
+            parent_comp = selected_joint_origin.parentComponent
+            joints = parent_comp.joints
+            joint_input = joints.createInput(joint_origin, selected_joint_origin)
+            joint_input.angle = valueInput.createByString("0 deg")
+            joint = joints.add(joint_input)
+            joint.isLightBulbOn = True
+
+        # Perform joining and cutting of bodies
+        cut_body_input = inputs.itemById("cut_bodies")
+        cut_bodies = []
+        body_count = cut_body_input.selectionCount
+
+        for i in range(body_count): # If 0 no operations
+            body = cut_body_input.selection(i).entity
+            cut_bodies.append(body)
+            # Make cut bodies transparent in preview mode
+            if not first_execute_started:
+                body.opacity = 0.5
+
+
+        cant_body = cantilever.bRepBodies[0]
+        root_comp = design.rootComponent
+        combineFeatures = root_comp.features.combineFeatures
+        CutFeatureOperation = adsk.fusion.FeatureOperations.CutFeatureOperation
+
+        subtraction_body = cant_body
+        for body_to_cut in cut_bodies:
+            tool_bodies = adsk.core.ObjectCollection.create()
+            tool_bodies.add(subtraction_body)
+            combine_input = combineFeatures.createInput(body_to_cut,
+                                                        tool_bodies)
+            combine_input.isKeepToolBodies = True
+            combine_input.operation = CutFeatureOperation
+            combineFeatures.add(combine_input)
+
+        # Finally fix everything up in the timeline
+        timeline_end = design.timeline.markerPosition
+
         cantilever_description_keys = ["length", "thickness",
-                                       "extrusion_distance",
+                                       "width",
                                        "strain", "nose_angle"]
         description_dict = {x: parameters[x] for x in
                             cantilever_description_keys}
-        cantilever.description = str(description_dict)
 
-        # ui.messageBox("Cantilever properties" + str(cantilever.component.description))
-        # ui.messageBox("parameters were the same!\n" + str(parameters))
-
-        previous_parameters = parameters.copy()
-        
     except:
         if ui:
             logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+def build_execute(args, preview=False):
+
+    global first_execute_started
+    execute = not preview
+    first_execute_started = True
+
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    timeline_start = design.timeline.markerPosition
+
+    #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
+
+    parameters = BASE_PARAMETERS.copy() # For external calls
+    name = parameters["name"]
+
+    perform_delete = False
+    try:
+        import_part(name)
+        object = design.timeline.item(timeline_start - 1)
+        object.deleteMe(True)
+
+        if SHOW_BOXES:
+            ui.messageBox(f"{preview}, IMPORT CRASH")
+    except:
+        ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+    if SHOW_BOXES:
+        ui.messageBox(f"THIRD: {execute=},"
+                      f" {first_execute_started=},"
+                      f" {second_execute_started}",
+                      f" {its_time_to_stop=}",
+                      )
+
 
 
 def mating_force(parameters):
@@ -215,7 +475,7 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
             bottom_radius = all_inputs.itemById("bottom_radius").value
             strain = all_inputs.itemById("strain").value
             thickness = all_inputs.itemById("thickness").value
-            extrusion_distance = all_inputs.itemById("extrusion_distance").value
+            width = all_inputs.itemById("width").value
             nose_angle = all_inputs.itemById("nose_angle").value
             gap_extrusion = all_inputs.itemById("gap_extrusion").value
             gap_length = all_inputs.itemById("gap_length").value
@@ -239,8 +499,8 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
                 self.logger.info("Input invalid because strain is negative.")
             elif thickness <= 0:
                 self.logger.info("Input invalid because thickness is too small.")
-            elif extrusion_distance <= 0:
-                self.logger.info("Input invalid because extrusion distance is "
+            elif width <= 0:
+                self.logger.info("Input invalid because width distance is "
                                  "too small.")
             elif nose_angle < 20:
                 self.logger.info("Input invalid because nose angle is too small.")
@@ -263,8 +523,8 @@ class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
         self.logger = logging.getLogger(type(self).__name__)
 
     def notify(self, args):
-        self.logger.debug("Triggered.")
-        build(args, preview=True)
+        self.logger.debug("Preview triggered.")
+        build_preview(args, preview=True)
 
 
 class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
@@ -277,11 +537,11 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 
     def notify(self, args):
         self.logger.info("Ok-button clicked.")
-        self.logger.debug("Triggered.")
+        self.logger.debug("OK button triggered.")
         try:
             design = adsk.fusion.Design.cast(app.activeProduct)
             if design:
-                build(args, preview=False)
+                build_execute(args, preview=False)
         except:
             if ui:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
@@ -295,7 +555,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         {"id": "bottom_radius", "display_text": "Bottom Radius", "units": "mm"},
         {"id": "thickness", "display_text": "Thickness", "units": "mm"},
         {"id": "length", "display_text": "Length", "units": "mm"},
-        {"id": "extrusion_distance", "display_text": "Extrusion distance",
+        {"id": "width", "display_text": "Width",
          "units": "mm"},
         {"id": "strain", "display_text": "Strain", "units": ""},
     ]
@@ -316,7 +576,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
                 "bottom_radius": 0.1,
                 "thickness": 0.3,
                 "length": 1.2,
-                "extrusion_distance": 0.6,
+                "width": 0.6,
                 "strain": 0.02,
                 "nose_angle": 70
             }
@@ -348,6 +608,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.log_path = logs_folder / "CantileverCommand.log"
 
         self.profiles_path = config_folder / "Profile Data" / "CantileverCommand.json"
+        ui.messageBox(str(self.profiles_path))
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -468,10 +729,19 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.logger.debug("Finished handlers.")
 
         self.logger.info("Opened command window.")
-        
-        global execute_triggered
-        execute_triggered = False
-        
+
+        # Reset previous parameters to avoid non-generation of cantilever
+        # when opening commmand window
+        global previous_parameters
+        global previous_selections
+        global first_execute_started
+        global second_execute_started
+        previous_parameters = None
+        previous_selections = None
+        first_execute_started = False
+        second_execute_started = False
+
+        first_preview = True
 
     def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
                    reason: adsk.core.CommandTerminationReason, input_values: dict):
@@ -573,7 +843,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
             join_body_input = selections.addSelectionInput("join_body",
                                                           'Body to join',
                                                           'Body to join')
-            join_body_input.setSelectionLimits(0,1)
+            join_body_input.setSelectionLimits(0, 1)
             join_body_input.addSelectionFilter(SelectionCommandInput.Bodies)
             join_body_input.tooltip = "Select the single body you want the " \
                                      "cantilever body to join."
@@ -585,9 +855,19 @@ class CantileverCommand(apper.Fusion360CommandBase):
                                                       'Bodies to cut')
         cut_body_input.addSelectionFilter(SelectionCommandInput.Bodies)
         cut_body_input.setSelectionLimits(0)
-        cut_body_input.tooltip = "Select the bodies that you want the pin to" \
+        cut_body_input.tooltip = "Select the bodies that you want the beam to" \
                                  " connect. A mating hole will be created for" \
                                  " the pin."
+
+        #
+        # nonsense1 = selections.addSelectionInput("nonsense1",
+        #                                               'Nonsense1',
+        #                                               'Nonsense1')
+        # nonsense1.addSelectionFilter(SelectionCommandInput.Bodies)
+        # nonsense1.setSelectionLimits(0)
+        # nonsense1.tooltip = "Select the bodies that you want the pin to" \
+        #                          " connect. A mating hole will be created for" \
+        #                          " the pin."
 
         """
             Position section
@@ -667,15 +947,15 @@ class CantileverCommand(apper.Fusion360CommandBase):
         cmd.inputChanged.add(profile_switcher)
         handlers.append(profile_switcher)
 
-        profile_modifier = ProfileModifier(self.profile_data, self.resources_path)
-        cmd.inputChanged.add(profile_modifier)
-        handlers.append(profile_modifier)
-
-        j_updater = JsonUpdater(self.profile_data, self.profiles_path)
-        cmd.inputChanged.add(j_updater)
-        handlers.append(j_updater)
-
-        input_limiter = InputLimiter()
-        cmd.validateInputs.add(input_limiter)
-        handlers.append(input_limiter)
+        # profile_modifier = ProfileModifier(self.profile_data, self.resources_path)
+        # cmd.inputChanged.add(profile_modifier)
+        # handlers.append(profile_modifier)
+        #
+        # j_updater = JsonUpdater(self.profile_data, self.profiles_path)
+        # cmd.inputChanged.add(j_updater)
+        # handlers.append(j_updater)
+        #
+        # input_limiter = InputLimiter()
+        # cmd.validateInputs.add(input_limiter)
+        # handlers.append(input_limiter)
 
