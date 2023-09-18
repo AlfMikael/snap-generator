@@ -36,7 +36,7 @@ BASE_PARAMETERS["length"] = 12
 BASE_PARAMETERS["strain"] = 0.04
 BASE_PARAMETERS["nose_angle"] = math.radians(60)
 BASE_PARAMETERS["name"] = "default_cantilever"
-BASE_PARAMETERS["antiname"] = "default_anticantilever"
+BASE_PARAMETERS["antiname"] = "default_antibody"
 
 BASE_PARAMETERS["r_top"] = 1.5
 # Gap parameters
@@ -161,7 +161,7 @@ def generate_cantilever(params: dict):
     stepfile.save(fname)
 
 
-def generate_anticantilever(params: dict):
+def generate_antibody(params: dict):
     # Step 1: Set variables to parameters
     p = BASE_PARAMETERS.copy()
     p.update(params)
@@ -254,13 +254,10 @@ def import_part(name):
 
 
 def build_preview(args, preview=False):
-    # return
     global first_execute_started
 
     inputs = args.command.commandInputs
     design = adsk.fusion.Design.cast(app.activeProduct)
-    #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
-
 
     timeline_start = design.timeline.markerPosition
 
@@ -275,15 +272,13 @@ def build_preview(args, preview=False):
         inputs.itemById("join_body").hasFocus = False
         inputs.itemById("selected_origin").hasFocus = False
 
-
-
     # Determine whether or not a subtractive body should be produced
     # todo: include checklist button in UI
     # if there are any subtraction bodies then yes
     if inputs.itemById("cut_bodies").selectionCount > 0:
-        include_subtractive_body = True
+        include_antibody = True
     else:
-        include_subtractive_body = False
+        include_antibody = False
 
 
 
@@ -332,11 +327,11 @@ def build_preview(args, preview=False):
         timeline_groups.item(last_group_index).deleteMe(False)
 
 
-        # Create and import ANTIcantilever, then expand group
-        anticantilever_occurrence = None
-        if include_subtractive_body:
-            generate_anticantilever(parameters)
-            anticantilever_occurrence = import_part(parameters["antiname"]).item(0)
+        # Create and import antibody, then expand group
+        antibody_occurrence = None
+        if include_antibody:
+            generate_antibody(parameters)
+            antibody_occurrence = import_part(parameters["antiname"]).item(0)
             timeline_groups = design.timeline.timelineGroups
             last_group_index = timeline_groups.count - 1
             timeline_groups.item(last_group_index).deleteMe(False)
@@ -419,11 +414,11 @@ def build_preview(args, preview=False):
         # Add properties to cantilever component
         # only works if cantilever is still a component
         #ui.messageBox(f"Is cantilever valid? {str(cantilever.isValid)}")
-        if anticantilever_occurrence:
+        if include_antibody:
             features = root_comp.features
             removeFeatures = features.removeFeatures
-            removeFeatures.add(anticantilever_occurrence)
-        # Remove anticantilever from timeline
+            removeFeatures.add(antibody_occurrence)
+        # Remove antibody from timeline
 
         #group = timeline_groups.add(timeline_start, last_timeline_pos)
         #group.name = "Cantilever Snap Fit: " + str(description_dict)
@@ -436,12 +431,11 @@ def build_preview(args, preview=False):
         cantilever.description = str(description_dict)
 
         last_timeline_pos = design.timeline.markerPosition - 1
-        ui.messageBox(f"Trying to create timeline groups from"
-                      f" start: {timeline_start} to end: {last_timeline_pos}")
+
         new_group = timeline_groups.add(timeline_start, last_timeline_pos)
         new_group.name = "Cantilever snap fit: " + str(description_dict)
 
-        # Remove anticantilever
+        # Remove antibody
         # Remove cantilever component
 
 
