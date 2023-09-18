@@ -102,13 +102,13 @@ def generate_cantilever(params):
 
     # Step 2: Draw straight lines
     point_data = ([(0, 0),  # Starts at bottom
-               (l * 1.20 + nose_x, 1 / 2 * th * 1.25),
-               (l * 1.20 + nose_x, 3 / 4 * th),
-               (l * 1.07 + nose_x, th + nose_height),
-               (l + nose_x, th + nose_height),
-               (l, th),
-               (r_top, th)
-               ])
+                   (l * 1.20, 1 / 2 * th * 1.25),
+                   (l * 1.20, 3 / 4 * th),
+                   (l * 1.07, th + nose_height),
+                   (l, th + nose_height),
+                   (l - nose_x, th),
+                   (r_top, th)
+                   ])
     x = [point[0] for point in point_data]
     y = [point[1] for point in point_data]
 
@@ -289,8 +289,7 @@ def build_preview(args, preview=False):
         if SHOW_BOXES:
             ui.messageBox(f"THIRD: {execute=},"
                           f" {first_execute_started=},"
-                          f" {second_execute_started}",
-                          f" {its_time_to_stop=}",
+                          f" {second_execute_started}"
                           )
 
         # cantilever_description_keys = ["length", "thickness",
@@ -323,11 +322,20 @@ def build_preview(args, preview=False):
             joint = joints.add(joint_input)
             joint.isLightBulbOn = True
 
+
+        # Prepare join and cut operations
+        cant_body = cantilever.bRepBodies[0]
+        root_comp = design.rootComponent
+        combineFeatures = root_comp.features.combineFeatures
+
+
         # Perform joining and cutting of bodies
         cut_body_input = inputs.itemById("cut_bodies")
         cut_bodies = []
         body_count = cut_body_input.selectionCount
 
+        # Cutting
+        # Add bodies to cut_list and apply transparency
         for i in range(body_count): # If 0 no operations
             body = cut_body_input.selection(i).entity
             cut_bodies.append(body)
@@ -335,12 +343,8 @@ def build_preview(args, preview=False):
             if not first_execute_started:
                 body.opacity = 0.5
 
-
-        cant_body = cantilever.bRepBodies[0]
-        root_comp = design.rootComponent
-        combineFeatures = root_comp.features.combineFeatures
+        # Perform cuts
         CutFeatureOperation = adsk.fusion.FeatureOperations.CutFeatureOperation
-
         subtraction_body = cant_body
         for body_to_cut in cut_bodies:
             tool_bodies = adsk.core.ObjectCollection.create()
@@ -350,6 +354,22 @@ def build_preview(args, preview=False):
             combine_input.isKeepToolBodies = True
             combine_input.operation = CutFeatureOperation
             combineFeatures.add(combine_input)
+
+        # Joining
+        join_body_input = inputs.itemById("join_body")
+        JoinFeatureOperation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+        if join_body_input.selectionCount == 1:
+            join_body = join_body_input.selection(0).entity
+            tool_bodies = adsk.core.ObjectCollection.create()
+            tool_bodies.add(cant_body)
+            combine_input = combineFeatures.createInput(join_body,
+                                                        tool_bodies)
+            combine_input.isKeepToolBodies = False
+            combine_input.operation = JoinFeatureOperation
+            combineFeatures.add(combine_input)
+
+        # Perform
+
 
         # Finally fix everything up in the timeline
         timeline_end = design.timeline.markerPosition
@@ -385,8 +405,7 @@ def build_execute(args, preview=False):
     if SHOW_BOXES:
         ui.messageBox(f"THIRD: (execute),"
                       f" {first_execute_started=},"
-                      f" {second_execute_started}",
-                      f" {its_time_to_stop=}",
+                      f" {second_execute_started}"
                       )
 
 
