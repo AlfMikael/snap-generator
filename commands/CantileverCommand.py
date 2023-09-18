@@ -29,20 +29,6 @@ app = adsk.core.Application.get()
 ui = app.userInterface
 handlers = []
 
-import time
-
-execute_triggered = False
-previous_parameters = None
-previous_selections = set()
-its_time_to_stop = False
-first_execute_started = False
-second_execute_started = False
-
-
-
-finished_runs = []
-
-
 BASE_PARAMETERS = {}
 BASE_PARAMETERS["thickness"] = 4
 BASE_PARAMETERS["width"] = 8
@@ -165,9 +151,6 @@ def generate_cantilever(params):
     stepfile.save(fname)
 
 
-
-
-
 def import_part(name):
     # Import part to Fusion 360
     app = adsk.core.Application.get()
@@ -193,36 +176,6 @@ def import_part(name):
     # Import step file to root component
     imported_comp = importManager.importToTarget2(stpOptions, comp)
     return imported_comp
-
-
-    try:
-        app = adsk.core.Application.get()
-        ui = app.userInterface
-        # Get import manager
-        importManager = app.importManager
-
-        # Get active design
-        product = app.activeProduct
-        design = adsk.fusion.Design.cast(product)
-
-        # Get root component
-        # comp = design.rootComponent
-
-        # Get current active component
-        comp = design.activeComponent
-
-        # Get step import options
-        stpFileName = p["name"] + ".step"
-        stpOptions = importManager.createSTEPImportOptions(stpFileName)
-        stpOptions.isViewFit = False
-
-        # Import step file to root component
-        imported_comp = importManager.importToTarget2(stpOptions, comp)
-        return imported_comp
-
-    except:
-        if ui:
-            ui.messageBox('Import step file Failed:\n{}'.format(traceback.format_exc()))
 
 
 def build_preview(args, preview=False):
@@ -435,7 +388,6 @@ def build_execute(args, preview=False):
                       f" {second_execute_started}",
                       f" {its_time_to_stop=}",
                       )
-
 
 
 def mating_force(parameters):
