@@ -34,11 +34,11 @@ BASE_PARAMETERS["thickness"] = 4
 BASE_PARAMETERS["width"] = 8
 BASE_PARAMETERS["length"] = 12
 BASE_PARAMETERS["strain"] = 0.04
-BASE_PARAMETERS["nose_angle"] = math.radians(60)
-BASE_PARAMETERS["name"] = "default_cantilever"
+BASE_PARAMETERS["nose_angle"] = 80
+BASE_PARAMETERS["name"] = "Generated cantilever snap"
 BASE_PARAMETERS["antiname"] = "default_antibody"
 
-BASE_PARAMETERS["r_top"] = 1.5
+BASE_PARAMETERS["top_radius"] = 1.5
 # Gap parameters
 BASE_PARAMETERS["gap_length"] = 0.2
 BASE_PARAMETERS["gap_thickness"] = 0.2
@@ -47,7 +47,7 @@ BASE_PARAMETERS["gap_legth"] = 0.15
 BASE_PARAMETERS["extra_length"] = 0.5
 
 PARAMETERS = {
-    "inner_radius": (float, int),
+    "top_radius": (float, int),
     "strain": (float, int),
     "thickness": (float, int),
     "length": (float, int),
@@ -64,7 +64,7 @@ PARAMETERS = {
     "name": (str,)
 }
 VALUE_PARAMETERS = [
-    "inner_radius",
+    "top_radius",
     "strain",
     "thickness",
     "length",
@@ -78,7 +78,7 @@ VALUE_PARAMETERS = [
     "extra_length"
 ]
 MULTIPLY10_KEYS = [
-    "inner_radius",
+    "top_radius",
     "thickness",
     "length",
     "width",
@@ -100,9 +100,9 @@ def generate_cantilever(params: dict):
     p.update(params)
 
     relevant_params = ["thickness", "length", "strain", "nose_angle",
-                       "width", "r_top", "name"]
+                       "width", "top_radius", "name"]
 
-    th, l, strain, nose_angle, width, r_top, name = [p[x] for x in
+    th, l, strain, nose_angle, width, top_radius, name = [p[x] for x in
                                                      relevant_params]
 
     nose_angle = math.radians(nose_angle)
@@ -117,7 +117,7 @@ def generate_cantilever(params: dict):
                    (l * 1.07, th + nose_height),
                    (l, th + nose_height),
                    (l - nose_x, th),
-                   (r_top, th)
+                   (top_radius, th)
                    ])
     x = [point[0] for point in point_data]
     y = [point[1] for point in point_data]
@@ -132,11 +132,11 @@ def generate_cantilever(params: dict):
     # Step 3: Create a radius arc
     # An arc is drawn from p0 to p2
     # To get the correct arc, an additional point (p1) must be identified
-    p2 = (0, th + r_top)  # Top of radius
+    p2 = (0, th + top_radius)  # Top of radius
 
     deg = math.radians(10)  # An arbitrary angle on the arc
-    p1_x = r_top * (1 - math.sin(deg))
-    p1_y = r_top * (1 - math.cos(deg)) + th
+    p1_x = top_radius * (1 - math.sin(deg))
+    p1_y = top_radius * (1 - math.cos(deg)) + th
     p1 = (p1_x, p1_y)
     part = part.threePointArc(p1, p2)
 
@@ -167,13 +167,13 @@ def generate_antibody(params: dict):
     p.update(params)
 
     relevant_params = ["thickness", "length", "strain", "nose_angle",
-                       "width", "r_top", "name"]
+                       "width", "top_radius", "name"]
     gap_params = ["gap_length", "gap_thickness", "gap_width", "extra_length",
                   "gap_length"]
 
 
     antiname = p["antiname"]
-    th, l, strain, nose_angle, width, r_top, name = [p[x] for x in
+    th, l, strain, nose_angle, width, top_radius, name = [p[x] for x in
                                                      relevant_params]
 
     gap_l, gap_th, gap_width, extra_length, gap_length = [p[x] for x in
@@ -190,8 +190,8 @@ def generate_antibody(params: dict):
                    (l * 1.07 + extra_length, th + nose_height + gap_th),
                    (l - gap_length, th + nose_height + gap_th),
                    (l - nose_x - gap_length, th + gap_th),
-                   (r_top, th + gap_th),
-                   (0, th + r_top + gap_th)
+                   (top_radius, th + gap_th),
+                   (0, th + top_radius + gap_th)
                    ])
     x = [point[0] for point in point_data]
     y = [point[1] for point in point_data]
@@ -226,7 +226,7 @@ def generate_antibody(params: dict):
 
 
 
-def import_part(name):
+def import_part(name, parent_component=None):
     # Import part to Fusion 360
     app = adsk.core.Application.get()
     ui = app.userInterface
@@ -238,10 +238,8 @@ def import_part(name):
     design = adsk.fusion.Design.cast(product)
 
     # Get root component
-    # comp = design.rootComponent
-
-    # Get current active component
-    comp = design.rootComponent
+    if parent_component == None:
+        parent_component = design.rootComponent
 
     # Get step import options
     stpFileName = name + ".step"
@@ -249,7 +247,7 @@ def import_part(name):
     stpOptions.isViewFit = False
 
     # Import step file to root component
-    imported_comp = importManager.importToTarget2(stpOptions, comp)
+    imported_comp = importManager.importToTarget2(stpOptions, parent_component)
     return imported_comp
 
 
@@ -264,6 +262,14 @@ def build_preview(args, preview=False):
     parameters = BASE_PARAMETERS.copy() # For external calls
     fusion_parameters = {}              # For internal calls
 
+    keep_component = True
+    include_antibody = True
+    component = None  # The final component belonging to the cantilever
+    occurrence = None  # The occurrence belonging to cantilever component
+    cantilever_body = None
+    antibody = None
+
+
     # Deselect al bodies and joint origins when first opening menu
     global first_preview
     if first_preview:
@@ -271,16 +277,6 @@ def build_preview(args, preview=False):
         inputs.itemById("cut_bodies").hasFocus = False
         inputs.itemById("join_body").hasFocus = False
         inputs.itemById("selected_origin").hasFocus = False
-
-    # Determine whether or not a subtractive body should be produced
-    # todo: include checklist button in UI
-    # if there are any subtraction bodies then yes
-    if inputs.itemById("cut_bodies").selectionCount > 0:
-        include_antibody = True
-    else:
-        include_antibody = False
-
-
 
 
     try:
@@ -318,41 +314,67 @@ def build_preview(args, preview=False):
                       f" {first_execute_started=},")
 
 
-        # Create and import cantilever, then expand group
+        active_component = design.activeComponent
+        root_component = design.rootComponent
+
+        # Create and import cantilever into active component,
+        # then expand (delete) group
         generate_cantilever(parameters)
-        cantilever_occurrence = import_part(parameters["name"]).item(0)
-        cantilever = cantilever_occurrence.component  # Component
+        # Confirmed: gives the correct occurrence
+        occurrence = import_part(parameters["name"], active_component).item(0)
+        component = occurrence.component  # Cantilever component
+        # Setting and naming the positive body
+        cantilever_body = component.bRepBodies.item(0)
+        cantilever_body.name = "cantilever"
         timeline_groups = design.timeline.timelineGroups
         last_group_index = timeline_groups.count - 1
+        # Disassemble the timeline group that gets automatically generated
         timeline_groups.item(last_group_index).deleteMe(False)
-
 
         # Create and import antibody, then expand group
         antibody_occurrence = None
+        antibody = None
         if include_antibody:
             generate_antibody(parameters)
-            antibody_occurrence = import_part(parameters["antiname"]).item(0)
+            antibody_occurrence = import_part(parameters["antiname"], root_component).item(0)
             timeline_groups = design.timeline.timelineGroups
             last_group_index = timeline_groups.count - 1
+            # Disassemble the timeline group that gets automatically generated
             timeline_groups.item(last_group_index).deleteMe(False)
+            antibody = antibody_occurrence.bRepBodies.item(0)
 
+            if keep_component:
+                # In this case, the antibody must be transferred over
+                antibody = antibody_occurrence.bRepBodies.item(0)
+                antibody = component.features.cutPasteBodies.add(antibody).bodies[0]
+                antibody.name = "antibody"
+                antibody.opacity = 0.7
+
+            # Remove the imported antibody component regardless
+            root_component.features.removeFeatures.add(antibody_occurrence)
 
         # Join joint origins if they exist
+
+        # Create joint origin on cantilever
+        jointGeometry = adsk.fusion.JointGeometry
+        jointOrigins = component.jointOrigins
+        point = component.originConstructionPoint
+        geo = jointGeometry.createByPoint(point)
+        joint_origin_input = jointOrigins.createInput(geo)
+        # Try to create a vector to get it right
+        angl = valueInput.createByString("180 deg")
+
+        joint_origin_input.angle = angl
+        joint_origin_input.zAxisEntity = component.xConstructionAxis
+
+        joint_origin = jointOrigins.add(joint_origin_input)
+
+        # Create joint if a joint origin is selected
         joint_input = inputs.itemById("selected_origin")
         if joint_input.selectionCount == 1:
             selected_joint_origin = joint_input.selection(0).entity
-
-            jointGeometry = adsk.fusion.JointGeometry
-            jointOrigins = cantilever.jointOrigins
-            point = cantilever.originConstructionPoint
-            geo = jointGeometry.createByPoint(point)
-            joint_origin_input = jointOrigins.createInput(geo)
-            joint_origin_input.xAxisEntity = cantilever.yConstructionAxis
-            joint_origin_input.zAxisEntity = cantilever.xConstructionAxis
-
-            # Joint origin on cantilever part
-            joint_origin = jointOrigins.add(joint_origin_input)
-
+            # Adding the joint to the component to which the selected
+            # joint origin belongs
             parent_comp = selected_joint_origin.parentComponent
             joints = parent_comp.joints
             joint_input = joints.createInput(joint_origin, selected_joint_origin)
@@ -360,9 +382,7 @@ def build_preview(args, preview=False):
             joint = joints.add(joint_input)
             joint.isLightBulbOn = True
 
-
         # Prepare join and cut operations
-        cant_body = cantilever.bRepBodies[0]
         root_comp = design.rootComponent
         combineFeatures = root_comp.features.combineFeatures
 
@@ -383,10 +403,9 @@ def build_preview(args, preview=False):
 
         # Perform cuts
         CutFeatureOperation = adsk.fusion.FeatureOperations.CutFeatureOperation
-        subtraction_body = cant_body
         for body_to_cut in cut_bodies:
             tool_bodies = adsk.core.ObjectCollection.create()
-            tool_bodies.add(subtraction_body)
+            tool_bodies.add(antibody)
             combine_input = combineFeatures.createInput(body_to_cut,
                                                         tool_bodies)
             combine_input.isKeepToolBodies = True
@@ -399,46 +418,35 @@ def build_preview(args, preview=False):
         if join_body_input.selectionCount == 1:
             join_body = join_body_input.selection(0).entity
             tool_bodies = adsk.core.ObjectCollection.create()
-            tool_bodies.add(cant_body)
+            tool_bodies.add(cantilever_body)
             combine_input = combineFeatures.createInput(join_body,
                                                         tool_bodies)
-            combine_input.isKeepToolBodies = False
+            combine_input.isKeepToolBodies = True
             combine_input.operation = JoinFeatureOperation
             combineFeatures.add(combine_input)
 
+        if keep_component:
             # Remove cantilever component
-            features = root_comp.features
-            removeFeatures = features.removeFeatures
-            removeFeatures.add(cantilever_occurrence)
+            component.name = parameters["name"]
+        else:
 
-        # Add properties to cantilever component
-        # only works if cantilever is still a component
-        #ui.messageBox(f"Is cantilever valid? {str(cantilever.isValid)}")
-        if include_antibody:
-            features = root_comp.features
-            removeFeatures = features.removeFeatures
-            removeFeatures.add(antibody_occurrence)
-        # Remove antibody from timeline
+            active_component.features.removeFeatures.add(occurrence)
 
-        #group = timeline_groups.add(timeline_start, last_timeline_pos)
-        #group.name = "Cantilever Snap Fit: " + str(description_dict)
 
         cantilever_description_keys = ["length", "thickness",
-                                       "width",
-                                       "strain", "nose_angle"]
+                                        "width",
+                                        "strain", "nose_angle"]
         description_dict = {x: parameters[x] for x in
-                            cantilever_description_keys}
-        cantilever.description = str(description_dict)
+                             cantilever_description_keys}
 
         last_timeline_pos = design.timeline.markerPosition - 1
 
         new_group = timeline_groups.add(timeline_start, last_timeline_pos)
-        new_group.name = "Cantilever snap fit: " + str(description_dict)
-
-        # Remove antibody
-        # Remove cantilever component
-
-
+        new_group.name = f"Cantilever snap fit: {description_dict}"
+        if keep_component:
+            # In case component is kept, also add description parameters
+            # to the component description
+            component.description = str(description_dict)
 
     except:
         if ui:
@@ -451,18 +459,21 @@ def build_execute(args, preview=False):
     timeline_start = design.timeline.markerPosition
     #ui.messageBox(f"FirstBox: {preview=}, {first_execute_started=} of cut bodies selected: {body_count}")
 
-    parameters = BASE_PARAMETERS.copy()
-    name = parameters["name"]
+    temp_parameters = BASE_PARAMETERS.copy()
+    temp_parameters["name"] = "temp component"
 
     global first_execute_started
     first_execute_started = True
 
+
     try:
-        import_part(name)
+        generate_cantilever(temp_parameters)
+        import_part(temp_parameters["name"])
         if SHOW_BOXES:
             ui.messageBox(f"{preview}, IMPORT CRASH")
     except:
         design.timeline.item(timeline_start).deleteMe(True)
+        pass
 
     if SHOW_BOXES:
         ui.messageBox(f"THIRD: (execute),"
@@ -494,7 +505,7 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
 
             length = all_inputs.itemById("length").value
             top_radius = all_inputs.itemById("top_radius").value
-            bottom_radius = all_inputs.itemById("bottom_radius").value
+            #bottom_radius = all_inputs.itemById("bottom_radius").value
             strain = all_inputs.itemById("strain").value
             thickness = all_inputs.itemById("thickness").value
             width = all_inputs.itemById("width").value
@@ -513,10 +524,10 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
                 self.logger.info("Input invalid because top radius is negative.")
             elif top_radius >= length:
                 self.logger.info("Input invalid because top radius is too big.")
-            elif bottom_radius < 0:
-                self.logger.info("Input invalid because bottom radius is negative.")
-            elif bottom_radius >= length:
-                self.logger.info("Input invalid because bottom radius is too big.")
+            # elif bottom_radius < 0:
+            #     self.logger.info("Input invalid because bottom radius is negative.")
+            # elif bottom_radius >= length:
+            #     self.logger.info("Input invalid because bottom radius is too big.")
             elif strain < 0:
                 self.logger.info("Input invalid because strain is negative.")
             elif thickness <= 0:
@@ -574,7 +585,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
     GEOMETRY_PARAMETERS = [
         {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},
         {"id": "nose_angle", "display_text": "Nose angle", "units": ""},
-        {"id": "bottom_radius", "display_text": "Bottom Radius", "units": "mm"},
+        # {"id": "bottom_radius", "display_text": "Bottom Radius", "units": "mm"},
         {"id": "thickness", "display_text": "Thickness", "units": "mm"},
         {"id": "length", "display_text": "Length", "units": "mm"},
         {"id": "width", "display_text": "Width",
@@ -595,7 +606,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
         "profiles": {
             "default": {
                 "top_radius": 0.15,
-                "bottom_radius": 0.1,
                 "thickness": 0.3,
                 "length": 1.2,
                 "width": 0.6,
@@ -719,7 +729,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
-        if profile_path.is_file():
+        if profile_path.is_file() :
             with open(profile_path, "r") as f:
                 self.profile_data = json.load(f)
         else:
@@ -966,15 +976,15 @@ class CantileverCommand(apper.Fusion360CommandBase):
         cmd.inputChanged.add(profile_switcher)
         handlers.append(profile_switcher)
 
-        # profile_modifier = ProfileModifier(self.profile_data, self.resources_path)
-        # cmd.inputChanged.add(profile_modifier)
-        # handlers.append(profile_modifier)
-        #
-        # j_updater = JsonUpdater(self.profile_data, self.profiles_path)
-        # cmd.inputChanged.add(j_updater)
-        # handlers.append(j_updater)
-        #
-        # input_limiter = InputLimiter()
-        # cmd.validateInputs.add(input_limiter)
-        # handlers.append(input_limiter)
+        profile_modifier = ProfileModifier(self.profile_data, self.resources_path)
+        cmd.inputChanged.add(profile_modifier)
+        handlers.append(profile_modifier)
+
+        j_updater = JsonUpdater(self.profile_data, self.profiles_path)
+        cmd.inputChanged.add(j_updater)
+        handlers.append(j_updater)
+
+        input_limiter = InputLimiter()
+        cmd.validateInputs.add(input_limiter)
+        handlers.append(input_limiter)
 
