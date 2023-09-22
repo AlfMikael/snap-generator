@@ -4,6 +4,7 @@ import adsk.cam
 from adsk.core import SelectionCommandInput, DropDownStyles
 from adsk.core import ValueInput as valueInput
 from adsk.fusion import Component
+from __file__. import cadquery_bundled
 
 import traceback
 import json
