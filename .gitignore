@@ -4,7 +4,9 @@
 /profile_data/CantileverPinCommand.json
 /log/CantileverPinCommand.log
 /create_release.ps1
-*.idea
+*snap-generator\.idea*
+*.idea*
 *.step
 Experimentation.ipynb
 /PROFILE DATA
+*misc.xml
