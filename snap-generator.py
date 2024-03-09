@@ -11,7 +11,7 @@ try:
     # Load commands
     from .commands.CantileverCommand import CantileverCommand
     from .commands.CantileverPinCommand import CantileverPinCommand
-    from .commands.SnapGeneratorSettings_old import SnapGeneratorSettings
+    from .commands.SettingsCommand import SettingsCommand
 
     # todo: Implement RotatableCantileverCommand
     # todo: Implement RotatableCantileverPinCommand
@@ -69,21 +69,16 @@ try:
 
     my_addin.add_command(
         'Settings',
-        SnapGeneratorSettings,
+        SettingsCommand,
         {
-            'cmd_description': 'Create a cantilever snap pin. Use the SIZE'
-                               ' parameter to get a "standardized" shape that is appropriate for '
-                               'the given SIZE. Note that gap parameters change the dimensions'
-                               ' of the pin.'
-                               ' For that reason, the gap thickness is limited by the difference '
-                               'between "width" and "thickness."',
-            'cmd_id': 'control_thingy',
+            'cmd_description': 'Settings',
+            'cmd_id': 'settings',
             'workspace': 'FusionSolidEnvironment',
             'toolbar_panel_id': 'SolidCreatePanel',
             "drop_down_cmd_id": "snap_drop_down",
             "drop_down_name": "Snap Generator",
             'toolbar_tab_id': 'SolidTab',
-            'cmd_resources': 'CantileverPinCommand',
+            'cmd_resources': 'SettingsCommand',
             'add_to_drop_down': True,
             'command_visible': True,
             'command_promoted': False,

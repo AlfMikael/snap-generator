@@ -116,7 +116,7 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-class SnapGeneratorSettings(apper.Fusion360CommandBase):
+class SettingsCommand(apper.Fusion360CommandBase):
 
     GEOMETRY_PARAMETERS = [
         {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},
