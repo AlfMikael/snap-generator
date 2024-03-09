@@ -11,6 +11,8 @@ try:
     # Load commands
     from .commands.CantileverCommand import CantileverCommand
     from .commands.CantileverPinCommand import CantileverPinCommand
+    from .commands.SnapGeneratorSettings_old import SnapGeneratorSettings
+
     # todo: Implement RotatableCantileverCommand
     # todo: Implement RotatableCantileverPinCommand
     # todo: Implement AnnularCommand
@@ -63,6 +65,42 @@ try:
             'command_visible': True,
             'command_promoted': False,
         }
+    )
+
+    my_addin.add_command(
+        'Settings',
+        SnapGeneratorSettings,
+        {
+            'cmd_description': 'Create a cantilever snap pin. Use the SIZE'
+                               ' parameter to get a "standardized" shape that is appropriate for '
+                               'the given SIZE. Note that gap parameters change the dimensions'
+                               ' of the pin.'
+                               ' For that reason, the gap thickness is limited by the difference '
+                               'between "width" and "thickness."',
+            'cmd_id': 'control_thingy',
+            'workspace': 'FusionSolidEnvironment',
+            'toolbar_panel_id': 'SolidCreatePanel',
+            "drop_down_cmd_id": "snap_drop_down",
+            "drop_down_name": "Snap Generator",
+            'toolbar_tab_id': 'SolidTab',
+            'cmd_resources': 'CantileverPinCommand',
+            'add_to_drop_down': True,
+            'command_visible': True,
+            'command_promoted': False,
+        }
+        # {
+        #     'cmd_description': 'Control Panel for activating or deactivating features.',
+        #     'cmd_id': 'control_panel',
+        #     'workspace': 'FusionSolidEnvironment',
+        #     'toolbar_panel_id': 'SolidScriptsAddinsPanel',  # Adjust as necessary
+        #     "drop_down_cmd_id": "snap_drop_down",
+        #     "drop_down_name": "Snap Generator",
+        #     'toolbar_tab_id': 'SolidTab',
+        #     'cmd_resources': 'CantileverPinCommand',
+        #     'add_to_drop_down': True,
+        #     'command_visible': True,
+        #     'command_promoted': False,
+        # }
     )
 
     app = adsk.core.Application.cast(adsk.core.Application.get())

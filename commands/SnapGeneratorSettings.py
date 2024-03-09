@@ -19,85 +19,7 @@ from ..lib import appdirs
 
 app = adsk.core.Application.get()
 ui = app.userInterface
-handlers = []
 
-
-def build(args, preview=False):
-    try:
-        logger = logging.getLogger("build-function")
-        logger.debug("Build initiated.")
-        design = adsk.fusion.Design.cast(app.activeProduct)
-        rootComp = design.rootComponent
-        inputs = args.command.commandInputs
-
-        # Build parameters
-        parameter_ids = list(Cantilever.get_parameter_dict().keys())
-        pos_parameters = ["x_location", "y_location"]
-        parameters = {}
-
-        # Extracting the value parameters from all parameters
-        value_parameters = list(set(parameter_ids) - set(pos_parameters))
-        try:
-            for par_id in value_parameters:
-                par_value = inputs.itemById(par_id).value
-                parameters[par_id] = par_value
-            for par_id in pos_parameters:
-                position = inputs.itemById(par_id).selectedItem.name
-                parameters[par_id] = position
-        except:
-            logger.error(f"Something went wrong with creating"
-                          f" parameter {par_id}")
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-        joint_origin = None
-        joint_input = inputs.itemById("selected_origin")
-        if joint_input.selectionCount == 1:
-            joint_origin = joint_input.selection(0).entity
-
-        join_body = None
-        join_body_input = inputs.itemById("join_body")
-        if join_body_input.selectionCount == 1:
-            join_body = join_body_input.selection(0).entity
-
-        cut_body_input = inputs.itemById("cut_bodies")
-        cut_bodies = []
-        body_count = cut_body_input.selectionCount
-        for i in range(body_count):
-            body = cut_body_input.selection(i).entity
-            cut_bodies.append(body)
-
-            # Make cut bodies transparent in preview mode
-            if preview:
-                body.opacity = 0.5
-
-        # Performing the actual operations
-        timeline_start = design.timeline.markerPosition
-
-        cant = Cantilever(rootComp, parameters,
-                   target_joint_org=joint_origin,
-                   join_body=join_body,
-                   cut_bodies=cut_bodies)
-
-        # Remove the component if a join-body operation was performed
-        if join_body:
-            rootComp.features.removeFeatures.add(cant.occurrence)
-
-        timeline_end = design.timeline.markerPosition
-        timeline_group = design.timeline.timelineGroups.add(timeline_start,
-                                                            timeline_end-1)
-        timeline_group.name = "Cantilever"
-
-        logger.info(f"Build succeeded.")
-
-    except:
-        if ui:
-            logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-
-def mating_force(parameters):
-    # todo: Implement get_mating_force
-    pass
 
 
 class InputLimiter(adsk.core.ValidateInputsEventHandler):
@@ -194,7 +116,7 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-class CantileverCommand(apper.Fusion360CommandBase):
+class SnapGeneratorSettings(apper.Fusion360CommandBase):
 
     GEOMETRY_PARAMETERS = [
         {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},

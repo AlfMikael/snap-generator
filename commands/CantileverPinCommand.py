@@ -602,7 +602,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         prof_settings.add_to_inputs(gap_tab)
 
     def add_handlers(self):
-        app = adsk.core.Application.get()
+
         cmd = self.command
 
         # Connect to the command related events.
