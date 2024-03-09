@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+Notable changes to the project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Slight modification of Cantilever shape.
-- Ui relocation, now in a drop down menu in SolidCreatePanel.
+- Ui relocation, now in a dropdown menu in SolidCreatePanel.
 - Logs and config files moved to the right place, away from addin root.
 - Changed the way CantileverPin scales as a function of size.
 

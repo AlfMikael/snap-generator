@@ -347,7 +347,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         # Store logs and profile config in appropriate config folder.
         # Varies depending on operating system. See appdirs module.
         appname = "Snap Generator - Fusion 360 addin"
-        version = "0.2.0"
+        version = "0.2.1"
         logs_folder = Path(
             appdirs.user_log_dir(appname=appname, version=version))
         config_folder = Path(
