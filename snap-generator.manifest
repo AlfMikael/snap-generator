@@ -1,7 +1,7 @@
 {
     "autodeskProduct": "Fusion360",
     "type": "addin",
-    "id": "398794d2-2370-4632-b6dd-5a1a9208a9a4",
+    "id": "e4e8994f-01d8-4047-af11-26703f04432d",
     "author": "Alf Mikael Constantinou",
     "description": "Module to generate snap geometry.",
     "version": "0.2.1",
