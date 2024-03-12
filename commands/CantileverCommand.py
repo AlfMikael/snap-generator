@@ -10,11 +10,11 @@ import logging.handlers
 from pathlib import Path
 
 from ..apper import apper
-from .snap.geometry import Cantilever
-from .snap.control import value_input, JsonUpdater
-from .snap.control import ProfileSettings, GapProfileSettings
-from .snap.control import ProfileSwitcher, ProfileModifier, validate_json
-from .snap.control import ProfileException
+from ..lib.snaplib.geometry import Cantilever
+from ..lib.snaplib.control import value_input, JsonUpdater
+from ..lib.snaplib.control import ProfileSettings, GapProfileSettings
+from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier, validate_json
+from ..lib.snaplib.control import ProfileException
 from ..lib import appdirs
 
 app = adsk.core.Application.get()

@@ -117,3 +117,7 @@ def run(context):
 
 def stop(context):
     my_addin.stop_app()
+
+def implement_config():
+    """  """
+    pass
