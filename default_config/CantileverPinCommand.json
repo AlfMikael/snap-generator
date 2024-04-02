@@ -1,0 +1,25 @@
+{
+  "default_profile": "default",
+  "default_gap_profile": "default",
+  "profiles": {
+    "default": {
+      "thickness": 0.3,
+      "length": 1.2,
+      "width": 0.9,
+      "extrusion_distance": 0.9,
+      "strain": 0.02,
+      "inner_radius": 0.1,
+      "ledge": 0.1,
+      "middle_padding": 0.3,
+      "nose_angle": 70
+    }
+  },
+  "gap_profiles": {
+    "default": {
+      "gap_thickness": 0.015,
+      "gap_length": 0.015,
+      "gap_extrusion": 0.015,
+      "extra_length": 0.06
+    }
+  }
+}
