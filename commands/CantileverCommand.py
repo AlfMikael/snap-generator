@@ -5,8 +5,8 @@ from adsk.core import SelectionCommandInput, DropDownStyles
 
 import traceback
 import json
-import logging
-import logging.handlers
+# import logging
+# import logging.handlers
 from pathlib import Path
 
 from ..apper import apper
@@ -16,6 +16,7 @@ from ..lib.snaplib.control import ProfileSettings, GapProfileSettings
 from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier, validate_json
 from ..lib.snaplib.control import ProfileException
 from ..lib import appdirs
+from ..lib.snaplib.configure import CONFIG_PATH
 
 app = adsk.core.Application.get()
 ui = app.userInterface
@@ -24,8 +25,8 @@ handlers = []
 
 def build(args, preview=False):
     try:
-        logger = logging.getLogger("build-function")
-        logger.debug("Build initiated.")
+        # logger = logging.getLogger("build-function")
+        # logger.debug("Build initiated.")
         design = adsk.fusion.Design.cast(app.activeProduct)
         rootComp = design.rootComponent
         inputs = args.command.commandInputs
@@ -45,8 +46,8 @@ def build(args, preview=False):
                 position = inputs.itemById(par_id).selectedItem.name
                 parameters[par_id] = position
         except:
-            logger.error(f"Something went wrong with creating"
-                          f" parameter {par_id}")
+            # logger.error(f"Something went wrong with creating"
+            #               f" parameter {par_id}")
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
         joint_origin = None
@@ -87,11 +88,11 @@ def build(args, preview=False):
                                                             timeline_end-1)
         timeline_group.name = "Cantilever"
 
-        logger.info(f"Build succeeded.")
+        # logger.info(f"Build succeeded.")
 
     except:
         if ui:
-            logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
+            # logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
@@ -111,53 +112,65 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
     """
     def __init__(self):
         super().__init__()
-        self.logger = logging.getLogger("InputLimiter")
+        # self.logger = logging.getLogger("InputLimiter")
 
     def notify(self, args):
-        try:
-            all_inputs = args.inputs
+        # Just passing here so that no code breaks
+        pass
 
-            length = all_inputs.itemById("length").value
-            top_radius = all_inputs.itemById("top_radius").value
-            bottom_radius = all_inputs.itemById("bottom_radius").value
-            strain = all_inputs.itemById("strain").value
-            thickness = all_inputs.itemById("thickness").value
-            extrusion_distance = all_inputs.itemById("extrusion_distance").value
-            nose_angle = all_inputs.itemById("nose_angle").value
-            gap_extrusion = all_inputs.itemById("gap_extrusion").value
-            gap_length = all_inputs.itemById("gap_length").value
-            gap_thickness = all_inputs.itemById("gap_thickness").value
-            extra_length = all_inputs.itemById("extra_length").value
-
-            # First setting to False. If everything OK, setting to True at end
-            args.areInputsValid = False
-
-            if length < 0.48:
-                self.logger.info("Input invalid because length is too small .")
-            elif top_radius < 0:
-                self.logger.info("Input invalid because top radius is negative.")
-            elif top_radius >= length:
-                self.logger.info("Input invalid because top radius is too big.")
-            elif bottom_radius < 0:
-                self.logger.info("Input invalid because bottom radius is negative.")
-            elif bottom_radius >= length:
-                self.logger.info("Input invalid because bottom radius is too big.")
-            elif strain < 0:
-                self.logger.info("Input invalid because strain is negative.")
-            elif thickness <= 0:
-                self.logger.info("Input invalid because thickness is too small.")
-            elif extrusion_distance <= 0:
-                self.logger.info("Input invalid because extrusion distance is "
-                                 "too small.")
-            elif nose_angle < 20:
-                self.logger.info("Input invalid because nose angle is too small.")
-            elif extra_length < 0:
-                self.logger.info("Input invalid because extra length negative.")
-            else:
-                args.areInputsValid = True
-                self.logger.debug("Inputs are acceptable.")
-        except:
-            ui.messageBox(traceback.format_exc())
+        """ Below was removed 4/2/24 because it wasnot doing anything, yet logging."""
+        # try:
+        #     all_inputs = args.inputs
+        #
+        #     length = all_inputs.itemById("length").value
+        #     top_radius = all_inputs.itemById("top_radius").value
+        #     bottom_radius = all_inputs.itemById("bottom_radius").value
+        #     strain = all_inputs.itemById("strain").value
+        #     thickness = all_inputs.itemById("thickness").value
+        #     extrusion_distance = all_inputs.itemById("extrusion_distance").value
+        #     nose_angle = all_inputs.itemById("nose_angle").value
+        #     gap_extrusion = all_inputs.itemById("gap_extrusion").value
+        #     gap_length = all_inputs.itemById("gap_length").value
+        #     gap_thickness = all_inputs.itemById("gap_thickness").value
+        #     extra_length = all_inputs.itemById("extra_length").value
+        #
+        #     # First setting to False. If everything OK, setting to True at end
+        #     args.areInputsValid = False
+        #
+        #     if length < 0.48:
+        #         # self.logger.info("Input invalid because length is too small .")
+        #         pass
+        #     elif top_radius < 0:
+        #         # self.logger.info("Input invalid because top radius is negative.")
+        #         pass
+        #     elif top_radius >= length:
+        #         # self.logger.info("Input invalid because top radius is too big.")
+        #         pass
+        #     elif bottom_radius < 0:
+        #         # self.logger.info("Input invalid because bottom radius is negative.")
+        #         pass
+        #     elif bottom_radius >= length:
+        #         # self.logger.info("Input invalid because bottom radius is too big.")
+        #         pass
+        #     elif strain < 0:
+        #         # self.logger.info("Input invalid because strain is negative.")
+        #         pass
+        #     elif thickness <= 0:
+        #         # self.logger.info("Input invalid because thickness is too small.")
+        #         pass
+        #     elif extrusion_distance <= 0:
+        #         # self.logger.info("Input invalid because extrusion distance is "
+        #                          "too small.")
+        #     # elif nose_angle < 20:
+        #     #     self.logger.info("Input invalid because nose angle is too small.")
+        #     # elif extra_length < 0:
+        #     #     self.logger.info("Input invalid because extra length negative.")
+        #     # else:
+        #     #     args.areInputsValid = True
+        #     #     self.logger.debug("Inputs are acceptable.")
+        #
+        # except:
+        #     ui.messageBox(traceback.format_exc())
 
 
 class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
@@ -167,10 +180,10 @@ class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
     """
     def __init__(self):
         super().__init__()
-        self.logger = logging.getLogger(type(self).__name__)
+        # self.logger = logging.getLogger(type(self).__name__)
 
     def notify(self, args):
-        self.logger.debug("Triggered.")
+        # self.logger.debug("Triggered.")
         build(args, preview=True)
 
 
@@ -180,11 +193,11 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
     """
     def __init__(self):
         super().__init__()
-        self.logger = logging.getLogger(type(self).__name__)
+        # self.logger = logging.getLogger(type(self).__name__)
 
     def notify(self, args):
-        self.logger.info("Ok-button clicked.")
-        self.logger.debug("Triggered.")
+        # self.logger.info("Ok-button clicked.")
+        # self.logger.debug("Triggered.")
         try:
             design = adsk.fusion.Design.cast(app.activeProduct)
             if design:
@@ -242,19 +255,13 @@ class CantileverCommand(apper.Fusion360CommandBase):
         super().__init__(name, options)
 
         # Store logs and profile config in appropriate config folder.
-        # Varies depending on operating system. See appdirs module.
-        appname = "Snap Generator - Fusion 360 addin"
-        version = "0.2.1"
-        logs_folder = Path(
-            appdirs.user_log_dir(appname=appname, version=version))
-        config_folder = Path(
-            appdirs.user_config_dir(appname=appname, version=version))
 
-        if not logs_folder.exists():
-            logs_folder.mkdir(parents=True)
-        self.log_path = logs_folder / "CantileverCommand.log"
+        #
+        # if not logs_folder.exists():
+        #     logs_folder.mkdir(parents=True)
+        # self.log_path = logs_folder / "CantileverCommand.log"
 
-        self.profiles_path = config_folder / "Profile Data" / "CantileverCommand.json"
+        self.profiles_path = CONFIG_PATH / "Profile Data" / "CantileverCommand.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -296,28 +303,28 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
     def on_create(self, command, inputs):
         # Logging
-        root_logger = logging.getLogger()
-        root_logger.propagate = True
+        # root_logger = logging.getLogger()
+        # root_logger.propagate = True
         # Remove any loggers that aren't cleaned up.
-        for handler in root_logger.handlers:
-            handler.close()
-            root_logger.removeHandler(handler)
+        # for handler in root_logger.handlers:
+        #     handler.close()
+            # root_logger.removeHandler(handler)
 
         # Adding logging to the defined LOG_Path
-        fh = logging.handlers.RotatingFileHandler(self.log_path, mode="a",
-                                                  maxBytes=20000)
-        self.file_handler = fh
-        fh.setLevel(logging.DEBUG)
-
-        format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:'
-                                   ' %(message)s',
-                                   datefmt='%H:%M:%S')
-        fh.setFormatter(format)
-        fh.mode = "w"
-        root_logger.addHandler(fh)
+        # fh = logging.handlers.RotatingFileHandler(self.log_path, mode="a",
+        #                                           maxBytes=20000)
+        # self.file_handler = fh
+        # # fh.setLevel(logging.DEBUG)
+        #
+        # format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:'
+        #                            ' %(message)s',
+        #                            datefmt='%H:%M:%S')
+        # fh.setFormatter(format)
+        # fh.mode = "w"
+        # root_logger.addHandler(fh)
 
         # Creating a specific logger for this class
-        self.logger = logging.getLogger(type(self).__name__)
+        # self.logger = logging.getLogger(type(self).__name__)
 
         # Connect to the command object
         self.command = command
@@ -358,7 +365,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         try:
             validate_json(data, self.GEOMETRY_PARAMETERS, self.GAP_PARAMETERS)
         except ProfileException as e:
-            self.logger.error(str(e))
+            # self.logger.error(str(e))
             error_message = "Error in config file that stores profiles" \
                             f" and gap profiles: {str(e)}." \
                             "\nEither repair, or delete it. If you delete it," \
@@ -369,23 +376,24 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
         self.profile_data = data
         self.createGUI()
-        self.logger.debug("Finished GUI.")
+        # self.logger.debug("Finished GUI.")
 
         self.add_handlers()
-        self.logger.debug("Finished handlers.")
+        # self.logger.debug("Finished handlers.")
 
-        self.logger.info("Opened command window.")
+        # self.logger.info("Opened command window.")
 
     def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
                    reason: adsk.core.CommandTerminationReason, input_values: dict):
 
-        self.logger.debug("onDestroy triggered.")
-        self.logger.info("# Command Window closed.")
+        pass
+        # self.logger.debug("onDestroy triggered.")
+        # self.logger.info("# Command Window closed.")
         # Removing and closing all handlers
-        root_logger = logging.getLogger()
-        for handler in root_logger.handlers:
-            handler.close()
-            root_logger.removeHandler(handler)
+        # root_logger = logging.getLogger()
+        # for handler in root_logger.handlers:
+        #     handler.close()
+        #     root_logger.removeHandler(handler)
 
     def on_preview(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
