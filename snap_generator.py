@@ -8,34 +8,24 @@ import shutil
 
 
 
-app = adsk.core.Application.cast(adsk.core.Application.get())
-ui = app.userInterface
-try:
-    import importlib
-    from . import config
-    from .lib.snaplib import configure
+# app = adsk.core.Application.cast(adsk.core.Application.get())
+# ui = app.userInterface
 
-    configure.set_config(config)  # Allow access to the config fil
+import importlib
+from . import config
+from .lib.snaplib import configure
 
-except:
-    ui.messageBox('Initialization Failed: {}'.format(traceback.format_exc()))
-
+configure.set_config(config)  # Allow access to the config fil
 
 
 
 """ Load commands """
 try:
-
     from . import config
     from .apper import apper
 
-
-
     # ************ My own scripts **************
     # Load commands
-    from .commands.CantileverCommand import CantileverCommand
-    from .commands.CantileverPinCommand import CantileverPinCommand
-    from .commands.SettingsCommand import SettingsCommand
 
     # todo: Implement RotatableCantileverCommand
     # todo: Implement RotatableCantileverPinCommand
@@ -46,14 +36,19 @@ try:
     my_addin = apper.FusionApp(config.app_name, config.company_name, False)
     my_addin.root_path = config.app_path
 
+    # Settings to determine which commands to load
+    app_settings = configure.get_settings()["apps_enable"]
+
+    cantilever_visible = app_settings["cantilever_advanced_enabled"]
+    from .commands.CantileverCommand import CantileverCommand
     my_addin.add_command(
         'Cantilever Snap',
         CantileverCommand,
         {
             'cmd_description': 'Create a cantilever snap shape, join it to a'
-            ' body, and create a mating slot in one or more other bodies.'
-            ' Note that gap parameters will change the dimensions of the'
-            ' mating hole, not the cantilever shape itself.',
+                               ' body, and create a mating slot in one or more other bodies.'
+                               ' Note that gap parameters will change the dimensions of the'
+                               ' mating hole, not the cantilever shape itself.',
             'cmd_id': 'cantilever snap',
             'workspace': 'FusionSolidEnvironment',
             'toolbar_panel_id': 'SolidCreatePanel',
@@ -63,21 +58,23 @@ try:
             'cmd_resources': 'CantileverCommand',
             'drop_down_resources': 'CantileverCommand',
             'add_to_drop_down': True,
-            'command_visible': True,
+            'command_visible': cantilever_visible,
             'command_promoted': False,
         }
     )
 
+    pin_visible = app_settings["pin_advanced_enabled"]
+    from .commands.CantileverPinCommand import CantileverPinCommand
     my_addin.add_command(
         'Snap Pin',
         CantileverPinCommand,
         {
             'cmd_description': 'Create a cantilever snap pin. Use the SIZE'
-            ' parameter to get a "standardized" shape that is appropriate for '
-            'the given SIZE. Note that gap parameters change the dimensions'
-            ' of the pin.'
-            ' For that reason, the gap thickness is limited by the difference '
-            'between "width" and "thickness."',
+                               ' parameter to get a "standardized" shape that is appropriate for '
+                               'the given SIZE. Note that gap parameters change the dimensions'
+                               ' of the pin.'
+                               ' For that reason, the gap thickness is limited by the difference '
+                               'between "width" and "thickness."',
             'cmd_id': 'cantilever_pin',
             'workspace': 'FusionSolidEnvironment',
             'toolbar_panel_id': 'SolidCreatePanel',
@@ -86,11 +83,14 @@ try:
             'toolbar_tab_id': 'SolidTab',
             'cmd_resources': 'CantileverPinCommand',
             'add_to_drop_down': True,
-            'command_visible': True,
+            'command_visible': pin_visible,
             'command_promoted': False,
         }
     )
 
+
+
+    from .commands.SettingsCommand import SettingsCommand
     my_addin.add_command(
         'Settings',
         SettingsCommand,
@@ -103,6 +103,7 @@ try:
             "drop_down_name": "Snap Generator",
             'toolbar_tab_id': 'SolidTab',
             'cmd_resources': 'SettingsCommand',
+            'cmd_resources': 'CantileverPinCommand',
             'add_to_drop_down': True,
             'command_visible': True,
             'command_promoted': False,
@@ -125,7 +126,7 @@ try:
     app = adsk.core.Application.cast(adsk.core.Application.get())
     ui = app.userInterface
 
-
+    # ui.messageBox("So far so good.")
 except:
     app = adsk.core.Application.get()
     ui = app.userInterface
@@ -136,8 +137,8 @@ except:
 """ Sets up config files for initial install."""
 try:
 
-    # from .lib.snaplib import config
     pass
+    # from .lib.snaplib import config
     # # Get app info from manifest
     # with open(Path(__file__).parent / "snap-generator.manifest", "r") as f:
     #     manifest = json.load(f)
@@ -154,12 +155,6 @@ try:
 
 except:
     ui.messageBox('Initialization Failed: {}'.format(traceback.format_exc()))
-
-
-
-# Set to True to display various useful messages when debugging your app
-debug = True
-
 
 def run(context):
     my_addin.run_app()

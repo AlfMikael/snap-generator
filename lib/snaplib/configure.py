@@ -33,6 +33,17 @@ def reset_config_file(commandName: str):
 
     os.makedirs(CONFIG_PATH, exist_ok=True)
 
+def get_settings():
+    # First check that the settings file exists
+    if not Path(SETTINGS_PATH).exists():
+        reset_settings()
+    with open(SETTINGS_PATH, "r") as f:
+        return json.load(f)
+
+def dump_settings(settings_dict):
+    with open(SETTINGS_PATH, "w") as f:
+        return json.dump(settings_dict, f, indent=4)
+
 
 def reset_settings():
     source_settings_file_path = config.app_path / "default_config" / f"settings.json"

@@ -45,11 +45,15 @@ class InputHandler(adsk.core.InputChangedEventHandler):
         input_command = args.input
         cmd = args.inputs.command
         all_inputs = args.inputs.command.commandInputs
+        settings = configure.get_settings()
+
+        # Check if in key
+        isinkeys = input_command.id in settings.keys()
+        # ui.messageBox(f"hello {input_command.id=} \n {isinkeys=}\n{settings}")
 
         if input_command.id == "reset_config":
             try:
                 configure.reset_settings()
-
             except:
                 ui.messageBox(f"Error: {traceback.format_exc()}")
         elif input_command.id == "open_config_folder":
@@ -58,6 +62,18 @@ class InputHandler(adsk.core.InputChangedEventHandler):
                 os.startfile(str(configure.CONFIG_PATH))
             except:
                 ui.messageBox(f"Error: {traceback.format_exc()}")
+
+        elif input_command.id in settings["apps_enable"].keys():
+            try:
+                key = input_command.id
+                bool_value = input_command.value
+                settings["apps_enable"][input_command.id] = bool_value
+                ui.messageBox(f"New settings:\n{settings}")
+                configure.dump_settings(settings)
+            except:
+                ui.messageBox(traceback.format_exc())
+        else:
+            ui.messageBox("settings:" f"{str(settings)}")
 
 
 class InputLimiter(adsk.core.ValidateInputsEventHandler):
@@ -104,23 +120,6 @@ class SettingsCommand(apper.Fusion360CommandBase):
     def __init__(self, name: str, options: dict):
         super().__init__(name, options)
 
-        # Store logs and profile config in appropriate config folder.
-        # Varies depending on operating system. See appdirs module.
-        # todo: load from manifest
-
-
-        # # Loading references relative to this projects root
-        # self.root_dir = self.fusion_app.root_path
-        # self.resources_path = self.root_dir / "commands" / "resources" / \
-        #                       "SettingsCommand"
-        # self.tool_clip_file_path = self.resources_path / "toolclip.png"
-        #
-        # config_folder = Path(
-        #     appdirs.user_config_dir(appname=appname, version=version))
-        #
-        # self.SETTINGS_PATH = config_folder / "settings.json"
-
-        # todo: add code to make config path files
 
     def on_execute(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
@@ -196,25 +195,32 @@ class SettingsCommand(apper.Fusion360CommandBase):
         feature_tab = inputs.addTabCommandInput('tab_1', 'Feature').children
 
 
-        # Top text
-        feature_tab.addTextBoxCommandInput("text_above_apps",
-                                           "",
-                                           "Note: changes are saved instantly.",
-                                           1,
-                                           True)
+        # Intended for resetting settings, but seems pointless
+        # feature_tab.addBoolValueInput("reset_config", "Reset config", False, "", False)
 
-        feature_tab.addBoolValueInput("reset_config", "Reset config", False, "", False)
         feature_tab.addBoolValueInput("open_config_folder", "Open config folder", False, "", False)
 
         size_value = value_input(5)
-
         feature_tab.addValueInput("size", "SIZE", "mm", size_value)
 
-
-
         active_apps_group = feature_tab.addGroupCommandInput("active_apps",
-                                                            "Active functions")
+                                                             "Active functions")
         active_apps = active_apps_group.children
+        settings = configure.get_settings()
+
+        # Top text
+        feature_tab.addTextBoxCommandInput("text_above_app_choices",
+                                           "",
+                                           "Add-in must be stopped and restarted to take effect.",
+                                           1,
+                                           True)
+        for key, value in settings["apps_enable"].items():
+            checkbox = active_apps.addBoolValueInput(key, key, True)
+            checkbox.value = value
+
+
+        # feature_tab.addBoolValueInput("", "", False, "", False)
+
         # app_settings = settings["apps_enable"]
         # for key in sorted(app_settings.keys()):
         #     active_apps.addBoolValueInput(key,
