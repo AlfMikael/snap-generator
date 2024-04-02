@@ -1,11 +1,35 @@
 import adsk.core
 import traceback
+import json
+import shutil
+from pathlib import Path
+from .lib import appdirs
+import shutil
 
 
 
+app = adsk.core.Application.cast(adsk.core.Application.get())
+ui = app.userInterface
 try:
+    import importlib
+    from . import config
+    from .lib.snaplib import configure
+
+    configure.set_config(config)  # Allow access to the config fil
+
+except:
+    ui.messageBox('Initialization Failed: {}'.format(traceback.format_exc()))
+
+
+
+
+""" Load commands """
+try:
+
     from . import config
     from .apper import apper
+
+
 
     # ************ My own scripts **************
     # Load commands
@@ -101,11 +125,37 @@ try:
     app = adsk.core.Application.cast(adsk.core.Application.get())
     ui = app.userInterface
 
+
 except:
     app = adsk.core.Application.get()
     ui = app.userInterface
+
     if ui:
         ui.messageBox('Initialization Failed: {}'.format(traceback.format_exc()))
+
+""" Sets up config files for initial install."""
+try:
+
+    # from .lib.snaplib import config
+    pass
+    # # Get app info from manifest
+    # with open(Path(__file__).parent / "snap-generator.manifest", "r") as f:
+    #     manifest = json.load(f)
+    #
+    # appname = "snap-generator"
+    # version = manifest["version"]
+    #
+    # default_config_folder = Path(__file__) / "default_config"
+    # config_folder = Path(
+    #     appdirs.user_config_dir(appname=appname, version=version))
+
+    # ui.messageBox(f"default config folder: {str(default_config_folder)}"
+    #               f"\n config directiory: {str(config_folder)}")
+
+except:
+    ui.messageBox('Initialization Failed: {}'.format(traceback.format_exc()))
+
+
 
 # Set to True to display various useful messages when debugging your app
 debug = True
@@ -118,6 +168,5 @@ def run(context):
 def stop(context):
     my_addin.stop_app()
 
-def implement_config():
-    """  """
-    pass
+
+
