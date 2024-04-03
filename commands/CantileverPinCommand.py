@@ -19,12 +19,14 @@ from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
 
 from ..lib import appdirs
 from ..lib.snaplib.configure import CONFIG_PATH
+from ..lib.snaplib import configure
 
 app = adsk.core.Application.get()
 ui = app.userInterface
 handlers = []
 first_timeline_object_index = [0]
 
+DEFAULT_SIZE = 0
 
 def build(args, preview=False):
     try:
@@ -114,6 +116,7 @@ def size_parameters(size, length_width_ratio=1.6):
     length = size * length_width_ratio
     inner_radius = 0
     gap_buffer = 0
+    max_gap_buffer = 0.08
     if 0 < size <= 0.3:
         inner_radius = 0.03
         gap_buffer = 0.030
@@ -122,12 +125,12 @@ def size_parameters(size, length_width_ratio=1.6):
         gap_buffer = 0.030 + (size - 0.3) / 25
     elif 1 < size <= 1.5:
         inner_radius = 0.05 + (size - 0.3) / 12
-        gap_buffer = 0.050
+        gap_buffer = 0.050 + (max_gap_buffer-0.05)*(size -1)/(1.5 - 1)
     elif 1.5 <= size:
         inner_radius = 0.15
-        gap_buffer = 0.050
+        gap_buffer = max_gap_buffer
 
-    thickness = width / 2 - inner_radius - gap_buffer
+    thickness = (width - 2*inner_radius - gap_buffer)/2
     middle_padding = thickness
     ledge = 0.05 + width / 20
 
@@ -236,7 +239,7 @@ class SizeInputHandler(adsk.core.InputChangedEventHandler):
         super().__init__()
 
     def notify(self, args):
-        ui.messageBox("Triggered size input")
+        # ui.messageBox("Triggered size input")
         input_command = args.input
         all_inputs = args.inputs.command.commandInputs
         # self.logger.debug(f"Input = {input_command.id}")
@@ -315,35 +318,8 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
     ]
 
-    # Default data for JSON file if it doesn't exist
-    FALLBACK_JSON = {
-        "default_profile": "default",
-        "default_gap_profile": "default",
-        "profiles": {
-            "default": {
-                "thickness": 0.3,
-                "length": 1.2,
-                "width": 0.9,
-                "extrusion_distance": 0.9,
-                "strain": 0.02,
-                "inner_radius": 0.1,
-                "ledge": 0.1,
-                "middle_padding": 0.3,
-                "nose_angle": 70
-            }
-        },
-        "gap_profiles": {
-            "default": {
-                "gap_thickness": 0.015,
-                "gap_length": 0.015,
-                "gap_extrusion": 0.015,
-                "extra_length": 0.06
-            }
-        }
-    }
-
     # Default value for the size (fake) parameter.
-    DEFAULT_SIZE = 0  # cm
+
 
     def __init__(self, name: str, options: dict):
         super().__init__(name, options)
@@ -363,7 +339,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         #     LOGS_PATH.mkdir(parents=True)
         # self.log_path = LOGS_PATH / "CantileverPinCommand.log"
 
-        self.profiles_path = CONFIG_PATH / "Profile Data" / "CantileverPinCommand.json"
+        self.profiles_path = CONFIG_PATH / "ProfileData" / "CantileverPinCommand.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -416,19 +392,23 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
             self.command.isExecutedWhenPreEmpted = False
             self.profile_data: dict
 
-            # Checking and fixing profile_data json
-            # If parent folder somehow is missing, add it
-            profile_path = Path(self.profiles_path)
-            if not self.profiles_path.parent.exists():
-                self.profiles_path.parent.mkdir(parents=True)
+            # IO stuff
+            try:
+                # Checking and fixing profile_data json
+                # If parent folder somehow is missing, add it
+                profile_path = Path(self.profiles_path)
+                if not self.profiles_path.parent.exists():
+                    self.profiles_path.parent.mkdir(parents=True)
 
-            if profile_path.is_file():
+                if not profile_path.is_file():
+                    # Profile does not exist, recreate it from default
+                    configure.reset_single_profile_data("CantileverPinCommand")
+
+                # Load profile data
                 with open(profile_path, "r") as f:
                     self.profile_data = json.load(f)
-            else:
-                with open(profile_path, "w") as f:
-                    json.dump(self.FALLBACK_JSON, f, indent=2)
-                self.profile_data = self.FALLBACK_JSON
+            except:
+                ui.messageBox(traceback.format_exc())
 
             self.createGUI()
             # self.logger.debug("Finished GUI")
@@ -450,7 +430,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
         prof_tab = inputs.addTabCommandInput('tab_2', 'Profiles').children
         gap_tab = inputs.addTabCommandInput('tab_3', 'Gaps').children
 
-        default_profile_name = self.profile_data["default_profile"]
+        # default_profile_name = self.profile_data["default_profile"]
         # size = self.profile_data["profiles"][default_profile_name]["width"]
         # strain = self.profile_data["profiles"][default_profile_name]["strain"]
 
@@ -487,7 +467,7 @@ class CantileverPinCommand(apper.Fusion360CommandBase):
 
         # SIZE is not in the list of parameters, because it is not a real
         # parameter. It is just a way to change all of them in a fell swoop
-        size_value = value_input(self.DEFAULT_SIZE)
+        size_value = value_input(DEFAULT_SIZE)
 
         geo_list.addValueInput("size", "SIZE", "mm", size_value)
 
