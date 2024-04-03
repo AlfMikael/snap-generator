@@ -19,7 +19,7 @@ from ..lib import appdirs
 from ..lib.snaplib.configure import CONFIG_PATH
 from ..lib.snaplib import configure
 
-from .CantileverPinCommand import size_parameters
+from .CantileverCommand import size_parameters
 
 app = adsk.core.Application.get()
 ui = app.userInterface
