@@ -30,6 +30,7 @@ class BaseSnap:
         """
         Step 1: Create new component
         """
+
         # Test parameters to make sure they are valid
         try:
             self.test_parameters(parameters)

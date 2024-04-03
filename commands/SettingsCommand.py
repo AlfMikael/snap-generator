@@ -51,24 +51,23 @@ class InputHandler(adsk.core.InputChangedEventHandler):
         isinkeys = input_command.id in settings.keys()
         # ui.messageBox(f"hello {input_command.id=} \n {isinkeys=}\n{settings}")
 
-        if input_command.id == "reset_config":
-            try:
-                configure.reset_settings()
-            except:
-                ui.messageBox(f"Error: {traceback.format_exc()}")
-        elif input_command.id == "open_config_folder":
+
+        if input_command.id == "open_config_folder":
             try:
                 import os
                 os.startfile(str(configure.CONFIG_PATH))
             except:
                 ui.messageBox(f"Error: {traceback.format_exc()}")
-
+        elif input_command.id == "reset_all_profile_data":
+            try:
+                configure.reset_all_profile_data()
+            except:
+                ui.messageBox(f"Error: {traceback.format_exc()}")
         elif input_command.id in settings["apps_enable"].keys():
             try:
-                key = input_command.id
                 bool_value = input_command.value
                 settings["apps_enable"][input_command.id] = bool_value
-                ui.messageBox(f"New settings:\n{settings}")
+                # ui.messageBox(f"New settings:\n{settings}")
                 configure.dump_settings(settings)
             except:
                 ui.messageBox(traceback.format_exc())
@@ -199,52 +198,46 @@ class SettingsCommand(apper.Fusion360CommandBase):
         # feature_tab.addBoolValueInput("reset_config", "Reset config", False, "", False)
 
         feature_tab.addBoolValueInput("open_config_folder", "Open config folder", False, "", False)
+        feature_tab.addBoolValueInput("reset_all_profile_data", "Reset All Profile Data", False, "", False)
 
-        size_value = value_input(5)
-        feature_tab.addValueInput("size", "SIZE", "mm", size_value)
 
+        """ Active apps refer to the functions that are currently enabled in the dropdown menu."""
         active_apps_group = feature_tab.addGroupCommandInput("active_apps",
-                                                             "Active functions")
+                                                             "Enable/Disable functions")
         active_apps = active_apps_group.children
         settings = configure.get_settings()
 
-        # Top text
-        feature_tab.addTextBoxCommandInput("text_above_app_choices",
+        # Info text for enabling/disalbing functions
+        active_apps.addTextBoxCommandInput("text_above_app_choices",
                                            "",
                                            "Add-in must be stopped and restarted to take effect.",
                                            1,
                                            True)
-        for key, value in settings["apps_enable"].items():
-            checkbox = active_apps.addBoolValueInput(key, key, True)
-            checkbox.value = value
 
+        """ This is purposely written explicitly instead of looping for clarity."""
+        # Simple Pin
+        key = "pin_simple_enabled"
+        value = settings["apps_enable"][key]
+        checkbox = active_apps.addBoolValueInput(key, "Simple Pin",  True)
+        checkbox.value = value
 
-        # feature_tab.addBoolValueInput("", "", False, "", False)
+        # Advanced Pin
+        key = "pin_advanced_enabled"
+        value = settings["apps_enable"][key]
+        checkbox = active_apps.addBoolValueInput(key, "Pin",  True)
+        checkbox.value = value
 
-        # app_settings = settings["apps_enable"]
-        # for key in sorted(app_settings.keys()):
-        #     active_apps.addBoolValueInput(key,
-        #                                   DESCRIPTION_MAP[key],
-        #                                   True,
-        #                                   "",
-        #                                   app_settings[key])
+        # Simple Cantilever
+        key = "cantilever_simple_enabled"
+        value = settings["apps_enable"][key]
+        checkbox = active_apps.addBoolValueInput(key, "Simple Cantilever",  True)
+        checkbox.value = value
 
-        # active_apps.addBoolValueInput("cantilever_simple", "Cantilever - Simple", True, "", False)
-        # active_apps.addBoolValueInput("cantilever_advanced", "Cantilever - Simple", True, "", False)
-        # active_apps.addBoolValueInput("pin_simple", "Pin - Simple", True, "", False)
-
-        # Button to open config-folder
-
-        # Button to reset config-folder
-
-
-
-
-      # Cantilever Advanced
-        # Cantilever Simple
-        # Pin - Advanced
-        # Pin - Simple
-        #ui.messageBox(str(settings))
+        # Advanced Cantilever
+        key = "cantilever_advanced_enabled"
+        value = settings["apps_enable"][key]
+        checkbox = active_apps.addBoolValueInput(key, "Cantilever",  True)
+        checkbox.value = value
 
     def add_handlers(self):
         app = adsk.core.Application.get()
