@@ -18,10 +18,14 @@ from ..lib.snaplib.control import ProfileException
 from ..lib import appdirs
 from ..lib.snaplib.configure import CONFIG_PATH
 
+
+from ..lib.snaplib import configure
+
 app = adsk.core.Application.get()
 ui = app.userInterface
 handlers = []
 
+DEFAULT_SIZE = 0
 
 def build(args, preview=False):
     try:
@@ -36,8 +40,10 @@ def build(args, preview=False):
         pos_parameters = ["x_location", "y_location"]
         parameters = {}
 
+
         # Extracting the value parameters from all parameters
         value_parameters = list(set(parameter_ids) - set(pos_parameters))
+        # value_parameters.remove("size")
         try:
             for par_id in value_parameters:
                 par_value = inputs.itemById(par_id).value
@@ -95,10 +101,91 @@ def build(args, preview=False):
             # logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-
 def mating_force(parameters):
     # todo: Implement get_mating_force
     pass
+
+def size_parameters(size, length_width_ratio=1.6):
+    """
+    This function generates a set of parameter values as a function of the
+    value of size. This is intended to make a sort of "standardized"
+    geometry, so that the different parameters scale well with the overall
+    size. For example, the size of the ledge should not be linear with the
+    overall with of the pin. That would make it uselessly small for small
+    pins, and pointlessly large for large pins. Radius on the other hand,
+    has an optimal value unrelated to the size of the pin: 1.5mm (to combat
+    fatigue). This can't achieved on small pins because then they wouldn't
+    have any thickness, so a compromise has to be made.
+
+    Parameters unaffected by size: strain, nose_angle and all gaps.
+    """
+
+    # logger = logging.getLogger("size-parameters")
+    # Don't allow size to go below 3
+    # Kind of a dirty hack, but avoids trouble.
+
+    if size <= 0.3:
+        size = 0.3
+    width = size
+    extrusion_distance = size
+    length = size * length_width_ratio
+    top_radius = 0
+    gap_buffer = 0
+    if 0 < size <= 0.3:
+        top_radius = 0.03
+    elif 0.3 < size <= 1:
+        # top_radius = 0.03 + (size - 0.3) / 6
+        top_radius = 0.03 + 0.12*(size - 0.3) / 0.7
+    elif 1 <= size :
+        top_radius = 0.15
+    #
+    #     top_radius = 0.05 + (size - 0.3) / 12
+    # elif 1.5 <= size:
+    #     top_radius = 0.15
+
+    thickness = width / 2 - top_radius - gap_buffer
+
+    thickness = round(thickness, 4)
+    top_radius = round(top_radius, 4)
+
+    advanced_params = { #"width": width,
+                       "length": length,
+                       "extrusion_distance": extrusion_distance,
+                       "top_radius": top_radius,
+                       "thickness": thickness,
+                       }
+
+    # logger.debug(f"Size={round(size*10, 5)}mm.\tRadius={round(inner_radius*10, 5)}mm\t"
+    #              f"Gap buffer={round(gap_buffer*10, 5)}mm")
+    return advanced_params
+
+
+
+class SizeInputHandler(adsk.core.InputChangedEventHandler):
+    """
+    Reacts when the 'size' field is changed, and changes a set of parameters
+    by the "size_parameters" function. See its docstring for details.
+    """
+    def __init__(self, profile_data):
+        self.profile_data = profile_data
+        # self.logger = logging.getLogger(type(self).__name__)
+        super().__init__()
+
+    def notify(self, args):
+        # ui.messageBox("Triggered size input")
+        input_command = args.input
+        all_inputs = args.inputs.command.commandInputs
+        # self.logger.debug(f"Input = {input_command.id}")
+
+        if input_command.id == "size":
+            try:
+                # self.logger.debug(f"Size triggered")
+                size = input_command.value
+                parameters = size_parameters(size)
+                for key, value in parameters.items():
+                    all_inputs.itemById(key).value = value
+            except:
+                ui.messageBox(f"Error: {traceback.format_exc()}")
 
 
 class InputLimiter(adsk.core.ValidateInputsEventHandler):
@@ -226,31 +313,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
     ]
 
-    # Default data for JSON file if it doesn't exist
-    FALLBACK_JSON = {
-        "default_profile": "default",
-        "default_gap_profile": "default",
-        "profiles": {
-            "default": {
-                "top_radius": 0.15,
-                "bottom_radius": 0.1,
-                "thickness": 0.3,
-                "length": 1.2,
-                "extrusion_distance": 0.6,
-                "strain": 0.02,
-                "nose_angle": 70
-            }
-        },
-        "gap_profiles": {
-            "default": {
-                "gap_thickness": 0.015,
-                "gap_length": 0.015,
-                "gap_extrusion": 0.015,
-                "extra_length": 0.06
-            }
-        }
-    }
-
     def __init__(self, name: str, options: dict):
         super().__init__(name, options)
 
@@ -261,7 +323,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         #     logs_folder.mkdir(parents=True)
         # self.log_path = logs_folder / "CantileverCommand.log"
 
-        self.profiles_path = CONFIG_PATH / "Profile Data" / "CantileverCommand.json"
+        self.profiles_path = CONFIG_PATH / "ProfileData" / "CantileverCommand.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -345,36 +407,39 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
         # Checking and fixing profile_data json
         # Also adding parent path if it somehow is missing
+
         profile_path = Path(self.profiles_path)
+        # IO stuff
+        try:
+            # Checking and fixing profile_data json
+            # If parent folder somehow is missing, add it
+            profile_path = Path(self.profiles_path)
+            if not self.profiles_path.parent.exists():
+                self.profiles_path.parent.mkdir(parents=True)
 
-        if not self.profiles_path.parent.exists():
-            self.profiles_path.parent.mkdir(parents=True)
+            if not profile_path.is_file():
+                # Profile does not exist, recreate it from default
+                configure.reset_single_profile_data("CantileverCommand")
 
-        if profile_path.is_file():
+            # Load profile data
             with open(profile_path, "r") as f:
                 self.profile_data = json.load(f)
-        else:
-            with open(profile_path, "w") as f:
-                json.dump(self.FALLBACK_JSON, f, indent=2)
-            self.profile_data = self.FALLBACK_JSON
+        except:
+            ui.messageBox(traceback.format_exc())
 
-        # Load and validate JSON data
-        with open(self.profiles_path, "r") as f:
-            data = json.load(f)
 
-        try:
-            validate_json(data, self.GEOMETRY_PARAMETERS, self.GAP_PARAMETERS)
-        except ProfileException as e:
-            # self.logger.error(str(e))
-            error_message = "Error in config file that stores profiles" \
-                            f" and gap profiles: {str(e)}." \
-                            "\nEither repair, or delete it. If you delete it," \
-                            " a new one will be generated with default contents." \
-                            "It's path is\n" \
-                            fr"{self.profiles_path}"
-            ui.messageBox(error_message)
+        # try:
+        #     validate_json(data, self.GEOMETRY_PARAMETERS, self.GAP_PARAMETERS)
+        # except ProfileException as e:
+        #     # self.logger.error(str(e))
+        #     error_message = "Error in config file that stores profiles" \
+        #                     f" and gap profiles: {str(e)}." \
+        #                     "\nEither repair, or delete it. If you delete it," \
+        #                     " a new one will be generated with default contents." \
+        #                     "It's path is\n" \
+        #                     fr"{self.profiles_path}"
+        #     ui.messageBox(error_message)
 
-        self.profile_data = data
         self.createGUI()
         # self.logger.debug("Finished GUI.")
 
@@ -428,6 +493,10 @@ class CantileverCommand(apper.Fusion360CommandBase):
                 items.add(key, True, str(blank_icon_path))
             else:
                 items.add(key, False, str(blank_icon_path))
+
+
+        size_value = value_input(DEFAULT_SIZE)
+        geo_list.addValueInput("size", "SIZE", "mm", size_value)
 
         profile = self.profile_data["profiles"][default_profile_name]
         # tooltip_path = self.RESOURCE_FOLDER / "dimension illustration.png"
@@ -585,6 +654,10 @@ class CantileverCommand(apper.Fusion360CommandBase):
         j_updater = JsonUpdater(self.profile_data, self.profiles_path)
         cmd.inputChanged.add(j_updater)
         handlers.append(j_updater)
+
+        simple_handler = SizeInputHandler(self.profile_data)
+        cmd.inputChanged.add(simple_handler)
+        handlers.append(simple_handler)
 
         input_limiter = InputLimiter()
         cmd.validateInputs.add(input_limiter)
