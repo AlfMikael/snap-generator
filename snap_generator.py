@@ -10,13 +10,15 @@ import shutil
 
 # app = adsk.core.Application.cast(adsk.core.Application.get())
 # ui = app.userInterface
+app = adsk.core.Application.cast(adsk.core.Application.get())
+ui = app.userInterface
+# ui.messageBox("Started app")
 
 import importlib
 from . import config
 from .lib.snaplib import configure
 
 configure.set_config(config)  # Allow access to the config fil
-
 
 
 """ Load commands """
@@ -39,54 +41,106 @@ try:
     # Settings to determine which commands to load
     app_settings = configure.get_settings()["apps_enable"]
 
-    cantilever_visible = app_settings["cantilever_advanced_enabled"]
-    from .commands.CantileverCommand import CantileverCommand
+
+
+    simple_cantilever_visible = app_settings["cantilever_simple_enabled"]
+    from .commands.SimpleCantileverCommand import SimpleCantileverCommand
     my_addin.add_command(
-        'Cantilever Snap',
-        CantileverCommand,
+        'Simple Cantilever',
+        SimpleCantileverCommand,
         {
-            'cmd_description': 'Create a cantilever snap shape, join it to a'
-                               ' body, and create a mating slot in one or more other bodies.'
-                               ' Note that gap parameters will change the dimensions of the'
-                               ' mating hole, not the cantilever shape itself.',
-            'cmd_id': 'cantilever snap',
+            'cmd_description': 'Create a cantilever snap with few options.',
+
+            'cmd_id': 'simple_cantilever',
             'workspace': 'FusionSolidEnvironment',
             'toolbar_panel_id': 'SolidCreatePanel',
             "drop_down_cmd_id": "snap_drop_down",
             "drop_down_name": "Snap Generator",
+            'drop_down_resources': 'CantileverCommand',
             'toolbar_tab_id': 'SolidTab',
             'cmd_resources': 'CantileverCommand',
-            'drop_down_resources': 'CantileverCommand',
+            'add_to_drop_down': True,
+            'command_visible': simple_cantilever_visible,
+            'command_promoted': False,
+        }
+    )
+
+    cantilever_visible = app_settings["cantilever_advanced_enabled"]
+    from .commands.CantileverCommand import CantileverCommand
+    my_addin.add_command(
+        'Cantilever',
+        CantileverCommand,
+        {
+            'cmd_description': 'Create a cantilever snap shape.'
+                               'It may join to a selected body and perform a cut to create a slot in another.'
+                               'Note that gap parameters will change the dimensions of the'
+                               'mating hole, not the cantilever shape itself. (opposite for pin).',
+            'cmd_id': 'advanced_cantilever',
+            'workspace': 'FusionSolidEnvironment',
+            'toolbar_panel_id': 'SolidCreatePanel',
+            "drop_down_cmd_id": "snap_drop_down",
+            "drop_down_name": "Snap Generator",
+            # 'drop_down_resources': 'CantileverCommand',
+            'toolbar_tab_id': 'SolidTab',
+            'cmd_resources': 'CantileverCommand',
             'add_to_drop_down': True,
             'command_visible': cantilever_visible,
             'command_promoted': False,
         }
     )
+    # ui.messageBox("loaded cantilever")
 
-    pin_visible = app_settings["pin_advanced_enabled"]
-    from .commands.CantileverPinCommand import CantileverPinCommand
+
+
+
+    pin_visible = app_settings["pin_simple_enabled"]
+    from .commands.SimpleCantileverPinCommand import SimpleCantileverPinCommand
     my_addin.add_command(
-        'Snap Pin',
-        CantileverPinCommand,
+        'Simple Pin',
+        SimpleCantileverPinCommand,
         {
-            'cmd_description': 'Create a cantilever snap pin. Use the SIZE'
-                               ' parameter to get a "standardized" shape that is appropriate for '
-                               'the given SIZE. Note that gap parameters change the dimensions'
-                               ' of the pin.'
-                               ' For that reason, the gap thickness is limited by the difference '
-                               'between "width" and "thickness."',
-            'cmd_id': 'cantilever_pin',
+            'cmd_description': 'Create a snap pin using a single parameter.',
+            'cmd_id': 'simple_pin',
             'workspace': 'FusionSolidEnvironment',
             'toolbar_panel_id': 'SolidCreatePanel',
             "drop_down_cmd_id": "snap_drop_down",
             "drop_down_name": "Snap Generator",
             'toolbar_tab_id': 'SolidTab',
             'cmd_resources': 'CantileverPinCommand',
+            # 'drop_down_resources': 'CantileverCommand',
             'add_to_drop_down': True,
             'command_visible': pin_visible,
             'command_promoted': False,
         }
     )
+
+
+    pin_visible = app_settings["pin_advanced_enabled"]
+    from .commands.CantileverPinCommand import CantileverPinCommand
+    my_addin.add_command(
+        'Pin',
+        CantileverPinCommand,
+        {
+            'cmd_description': 'Create a cantilever snap pin.'
+                               ' parameter to get a "standardized" shape that is appropriate for '
+                               'the given SIZE. Note that gap parameters change the dimensions'
+                               ' of the pin.'
+                               ' For that reason, the gap thickness is limited by the difference '
+                               'between "width" and "thickness."',
+            'cmd_id': 'advanced_pin',
+            'workspace': 'FusionSolidEnvironment',
+            'toolbar_panel_id': 'SolidCreatePanel',
+            "drop_down_cmd_id": "snap_drop_down",
+            "drop_down_name": "Snap Generator",
+            'toolbar_tab_id': 'SolidTab',
+            'cmd_resources': 'CantileverPinCommand',
+            # 'drop_down_resources': 'CantileverPinCommand40',
+            'add_to_drop_down': True,
+            'command_visible': pin_visible,
+            'command_promoted': False,
+        }
+    )
+
 
 
 
@@ -102,31 +156,21 @@ try:
             "drop_down_cmd_id": "snap_drop_down",
             "drop_down_name": "Snap Generator",
             'toolbar_tab_id': 'SolidTab',
-            'cmd_resources': 'SettingsCommand',
-            'cmd_resources': 'CantileverPinCommand',
+            'cmd_resources': 'Settings',
+            # 'drop_down_resources': 'CantileverCommand',
             'add_to_drop_down': True,
             'command_visible': True,
             'command_promoted': False,
         }
-        # {
-        #     'cmd_description': 'Control Panel for activating or deactivating features.',
-        #     'cmd_id': 'control_panel',
-        #     'workspace': 'FusionSolidEnvironment',
-        #     'toolbar_panel_id': 'SolidScriptsAddinsPanel',  # Adjust as necessary
-        #     "drop_down_cmd_id": "snap_drop_down",
-        #     "drop_down_name": "Snap Generator",
-        #     'toolbar_tab_id': 'SolidTab',
-        #     'cmd_resources': 'CantileverPinCommand',
-        #     'add_to_drop_down': True,
-        #     'command_visible': True,
-        #     'command_promoted': False,
-        # }
     )
 
-    app = adsk.core.Application.cast(adsk.core.Application.get())
-    ui = app.userInterface
 
-    # ui.messageBox("So far so good.")
+
+
+
+    # ui.messageBox("Finished initialization script.")
+
+
 except:
     app = adsk.core.Application.get()
     ui = app.userInterface
