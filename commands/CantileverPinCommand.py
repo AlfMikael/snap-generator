@@ -131,6 +131,7 @@ def size_parameters(size, length_width_ratio=1.6):
         gap_buffer = max_gap_buffer
 
     thickness = (width - 2*inner_radius - gap_buffer)/2
+
     middle_padding = thickness
     ledge = 0.05 + width / 20
 

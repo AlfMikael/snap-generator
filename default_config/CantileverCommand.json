@@ -5,7 +5,7 @@
     "default": {
       "top_radius": 0.15,
       "bottom_radius": 0,
-      "thickness": 0.35,
+      "thickness": 0.3827,
       "length": 1.6,
       "extrusion_distance": 1,
       "strain": 0.025,
@@ -14,9 +14,9 @@
   },
   "gap_profiles": {
     "default": {
-      "gap_thickness": 0.015,
-      "gap_length": 0.015,
-      "gap_extrusion": 0.015,
+      "gap_thickness": 0.02,
+      "gap_length": 0.02,
+      "gap_extrusion": 0.02,
       "extra_length": 0.06
     }
   }
