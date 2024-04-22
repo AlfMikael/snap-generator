@@ -1,0 +1,35 @@
+{
+  "default_profile": "default",
+  "default_gap_profile": "default",
+  "profiles": {
+    "default": {
+      "thickness": 0.442,
+      "length": 1.6,
+      "width": 1,
+      "extrusion_distance": 1,
+      "strain": 0.015,
+      "pin_prestrain": 0.015,
+      "gap_buffer": 0.058,
+      "ledge": 0.1,
+      "middle_padding": 0.442,
+      "nose_angle": 70,
+      "wall_thickness": 0.25
+    }
+  },
+  "gap_profiles": {
+    "default": {
+      "width_gap": 0.02,
+      "length_gap": 0.02,
+      "gap_extrusion": 0.02,
+      "length_gap": 0.06,
+      "extra_length": 0.08
+    },
+      "zero": {
+      "width_gap": 0,
+      "length_gap": 0,
+      "gap_extrusion": 0,
+      "length_gap": 0,
+      "extra_length": 0.08
+    }
+  }
+}

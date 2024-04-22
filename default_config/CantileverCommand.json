@@ -19,5 +19,12 @@
       "gap_extrusion": 0.02,
       "extra_length": 0.06
     }
-  }
+  },
+  "zero": {
+    "width_gap": 0,
+    "length_gap": 0,
+    "gap_extrusion": 0,
+    "length_gap": 0,
+    "extra_length": 0.08
+    }
 }
