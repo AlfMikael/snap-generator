@@ -141,6 +141,26 @@ try:
         }
     )
 
+    from .commands.ExperimentalPinCommand import ExperimentalPinCommand
+    my_addin.add_command(
+        'Experimmental Pin',
+        ExperimentalPinCommand,
+        {
+            'cmd_description': 'Experimental Pin command',
+            'cmd_id': 'experimental_pin',
+            'workspace': 'FusionSolidEnvironment',
+            'toolbar_panel_id': 'SolidCreatePanel',
+            "drop_down_cmd_id": "snap_drop_down",
+            "drop_down_name": "Snap Generator",
+            'toolbar_tab_id': 'SolidTab',
+            'cmd_resources': 'CantileverPinCommand',
+            # 'drop_down_resources': 'CantileverPinCommand40',
+            'add_to_drop_down': True,
+            'command_visible': True,
+            'command_promoted': False,
+        }
+    )
+
 
 
 

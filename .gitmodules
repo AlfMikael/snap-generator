@@ -1,3 +1,6 @@
 [submodule "apper"]
 	path = apper
 	url = https://github.com/tapnair/apper
+[submodule "lib/platformdirs"]
+	path = lib/platformdirs
+	url = https://github.com/platformdirs/platformdirs.git

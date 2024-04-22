@@ -1,9 +1,9 @@
 # Script that clones the repo with git, and then removes
 # the things that are unneeded and unwanted for a release.
 
-$version = "v0.2.1"
+$version = "v0.3.0"
 $source_repo = "."
-$name = "snap-generator-$version"
+$name = "snap_generator_$version"
 $target_folder = "../$name"
 
 if (Test-Path -Path $target_folder) {
@@ -11,7 +11,8 @@ if (Test-Path -Path $target_folder) {
     rm -r -fo $target_folder
 }
 git clone --recurse-submodules --depth 1 $source_repo $target_folder
-rename-item -Path "$target_folder/snap-generator.py" "$($name).py"
+rename-item -Path "$target_folder/snap_generator.py" "$name.py"
+
 rm $target_folder/create_release.ps1
 rm -r -fo $target_folder/.git
 rm -r -fo $target_folder/.gitignore
