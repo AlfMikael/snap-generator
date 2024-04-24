@@ -5,10 +5,11 @@ Notable changes to the project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-- When creating a snap shape, but not performing a cut, also include a negative body, so that a manual cut can be performed in the future. This way a specific Cantilever or Pin may be saved and used for later, without having to re-generate it.
-- When creating a snap shape, also include a positive body around the negative body, to provide the necessary scaffolding around the Pin or cantilever. That way, it is no longer necessary to ensure that there is enough material in the region near the to-be-inserted snap shape.
-
+## [0.3.1]
+- For Pin: When not performing a cut, also include a negative body, so that a manual cut can be performed in the future. This way a specific Pin may be saved and used for later, without having to re-generate it.
+- For Pin: Added a positive body around the pin, which serves as the scaffolding. That way, it is no longer necessary to manually ensure that there is enough material to make a mating slot for the pin.
+- For Pin: It is now more complicated to cut into bodies. Only two bodies can be cut into, and the ordering is not arbitrary. An illustrative blue and yellow line is now drawn by the pin geometry to help identify which bodies to select where.
+- For Cantilever and SimpleCantilever: Altered the geometry function to align with the Pin.
 
 
 ## [0.3.0]
