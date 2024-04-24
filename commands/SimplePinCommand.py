@@ -1,3 +1,9 @@
+"""
+The difference between the "Addition" version of the Pin and the "non-addition" is the inclusion of a
+positive body when generating the slot. This insured that there is enough material around the pin
+to support it.
+"""
+
 import adsk.core
 import adsk.fusion
 import adsk.cam
@@ -12,7 +18,7 @@ from pathlib import Path
 
 
 from ..apper import apper
-from ..lib.snaplib.geometry import BaseSnap, CantileverPin
+from ..lib.snaplib.geometry import Pin
 from ..lib.snaplib.control import value_input, JsonUpdater
 from ..lib.snaplib.control import ProfileSection, ProfileSettings, GapProfileSettings
 from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
@@ -26,11 +32,22 @@ ui = app.userInterface
 handlers = []
 first_timeline_object_index = [0]
 
+DEFAULT_SIZE = 0
+
+target_body1 = None
+target_body2 = None
+
 DEFAULT_SIZE = 1  # = 10mm
-DEFAULT_STRAIN = 0.025
+DEFAULT_STRAIN = 0.012
 DEFAULT_NOSE_ANGLE = 70
+DEFAULT_PIN_PRESTRAIN = 0.012
 
 def build(args, preview=False):
+    """
+    There is an important difference between this build function and the one that doesn't perform
+    addition. The boolean joins and subtract is performed within this function, as opposed to within the
+    Pin object.
+    """
     try:
         # logger = logging.getLogger("build")
         # logger.debug("Build function initiated.")
@@ -40,7 +57,7 @@ def build(args, preview=False):
 
         inputs = args.command.commandInputs
         # Build parameters
-        parameter_ids = list(CantileverPin.get_parameter_dict().keys())
+        parameter_ids = list(Pin.get_parameter_dict().keys())
         pos_parameters = ["x_location", "y_location"]
         parameters = {}
 
@@ -49,6 +66,7 @@ def build(args, preview=False):
         values = size_parameters(size)
         values["strain"] = DEFAULT_STRAIN  # Adding a hardcoded strain
         values["nose_angle"] = DEFAULT_NOSE_ANGLE  # hardcoded nose angle
+        values["pin_prestrain"] = DEFAULT_PIN_PRESTRAIN
 
         #  Add the parameters inferred from the size parameter
         for par_id, value in values.items():
@@ -57,7 +75,7 @@ def build(args, preview=False):
 
         # Retrieve the data from the chosen parameters
         try:
-            for par_id in ["extra_length", "gap_length", "gap_thickness", "gap_extrusion"]:
+            for par_id in ["width_gap", "gap_extrusion", "length_gap", "extra_length"]:
                 par_value = inputs.itemById(par_id).value
                 parameters[par_id] = par_value
             for par_id in pos_parameters:
@@ -74,23 +92,172 @@ def build(args, preview=False):
         if joint_input.selectionCount == 1:
             joint_origin = joint_input.selection(0).entity
 
-        cut_body_input = inputs.itemById("cut_bodies")
-        cut_bodies = []
-        body_count = cut_body_input.selectionCount
-        for i in range(body_count):
-            body = cut_body_input.selection(i).entity
-            cut_bodies.append(body)
-            # Make cut bodies transparent in preview mode
-            if preview:
-                body.opacity = 0.5
+
+
+
+        """ At this point there should be one main body, one subtraction body, and two
+        addition bodies. The following steps are for the boolean operations.
+        """
+
+        # Join the first addition body to the first selected mating body
+        target1 = inputs.itemById("target1")
+        target2 = inputs.itemById("target2")
+
+        # ui.messageBox(f"{body_count=}")
+        global target_body1
+        global target_body2
+
+        # This is just to correct for the bug where it deselects your choice
+        if preview:
+            if target1.selectionCount > 0:
+                target_body1 = target1.selection(0).entity
+            else:
+                target_body1 = None
+            if target2.selectionCount > 0:
+                target_body2 = target2.selection(0).entity
+            else:
+                target_body2 = None
+
+        # ui.messageBox(f"{target_body1=}, {target_body2=}")
 
         # Performing the actual operations
         timeline_start = design.timeline.markerPosition
+        pin = Pin(rootComp, parameters,
+                              target_joint_org=joint_origin,
+                              target_body1=target_body1,
+                              target_body2=target_body2)
 
-        CantileverPin(rootComp, parameters,
-                      target_joint_org=joint_origin,
-                      cut_bodies=cut_bodies)
-        # logging.info(f"Build succeeded with {len(cut_bodies)} cut_bodies.")
+
+        # Draw lines only in preview
+        if preview:
+            # Yellow line
+            try:
+                # Get the root component of the active design
+                comp = pin.comp
+                graphicsGroup = comp.customGraphicsGroups.add()
+
+                # Define points along the X-axis
+                start_point = adsk.core.Point3D.create(0, parameters["width"]/2, 0)  # Origin point
+                end_point = adsk.core.Point3D.create(-parameters["length"]*4.5, parameters["width"]/2, 0)  # 100 units along the X-axis
+
+                # Create custom graphics coordinates
+                points = [
+                    start_point.x, start_point.y, start_point.z,
+                    end_point.x, end_point.y, end_point.z
+                ]
+
+                # Create the coordinates object
+                coordinates = adsk.fusion.CustomGraphicsCoordinates.create(points)
+
+                # Create the lines using the coordinates and indices
+                lines = graphicsGroup.addLines(coordinates, [0, 1], False)
+
+                # Optionally set the color of the line (red in this example)
+                color = adsk.core.Color.create(255, 255, 0, 255)  # RGBA format
+                colorEffect = adsk.fusion.CustomGraphicsSolidColorEffect.create(color)
+                lines.color = colorEffect
+                lines.weight = 5
+                lines.depthPriority = 1000
+                # Refresh the viewport to see the change
+                app.activeViewport.refresh()
+            except:
+                ui.messageBox(traceback.format_exc())
+
+            # Draw blue line
+            try:
+                # Get the root component of the active design
+                comp = pin.comp
+                graphicsGroup = comp.customGraphicsGroups.add()
+
+                # Define points along the X-axis
+                start_point = adsk.core.Point3D.create(0, parameters["width"]/2, 0)  # Origin point
+                end_point = adsk.core.Point3D.create(parameters["length"]*4.5, parameters["width"]/2, 0)  # 100 units along the X-axis
+
+                # Create custom graphics coordinates
+                points = [
+                    start_point.x, start_point.y, start_point.z,
+                    end_point.x, end_point.y, end_point.z
+                ]
+
+                # Create the coordinates object
+                coordinates = adsk.fusion.CustomGraphicsCoordinates.create(points)
+
+                # Create the lines using the coordinates and indices
+                lines = graphicsGroup.addLines(coordinates, [0, 1], False)
+
+                # Optionally set the color of the line (red in this example)
+                color = adsk.core.Color.create(0, 0, 255, 255)  # RGBA format
+                colorEffect = adsk.fusion.CustomGraphicsSolidColorEffect.create(color)
+                lines.color = colorEffect
+                lines.weight = 5
+                lines.depthPriority = 1000
+                # Refresh the viewport to see the change
+                app.activeViewport.refresh()
+            except:
+                ui.messageBox(traceback.format_exc())
+
+        # Draw red arrow
+        try:
+            pass
+            # # Create a custom graphics group
+            # graphicsGroup = rootComp.customGraphicsGroups.add()
+            #
+            # # Define coordinates for the line
+            # points = [
+            #     0, 0, 0,  # Start point (x, y, z)
+            #     1000, 1000, 0  # End point (x, y, z)
+            # ]
+            #
+            # # Create the coordinates object
+            # coordinates = adsk.fusion.CustomGraphicsCoordinates.create(points)
+            #
+            # # Create the lines using the coordinates
+            # lines = graphicsGroup.addLines(coordinates, [0, 1], False)
+            #
+            # # Optionally set the color of the line (red in this example)
+            # color = adsk.core.Color.create(255, 0, 0, 255)  # RGBA format
+            # lines.color = color
+            #
+            # # Refresh the viewport to see the change
+            # app.activeViewport.refresh()
+        except:
+            ui.messageBox(traceback.format_exc())
+
+
+
+
+        subtraction_body = pin.comp.bRepBodies.itemByName("Subtraction body")
+        addition_body1 = pin.comp.bRepBodies.itemByName("Addition body 1")
+        addition_body2 = pin.comp.bRepBodies.itemByName("Addition body 2")
+
+
+
+        # Make som bodies less opaque
+        if target_body1 and preview:
+            target_body1.opacity = 0.40
+            # Don't want to display subtraction body during preview
+            subtraction_body.isVisible = False
+            # Make som bodies less opaque
+        if target_body2 and preview:
+            target_body2.opacity = 0.40
+            # Don't want to display subtraction body during preview
+            subtraction_body.isVisible = False
+
+        # Remove subtraction body in the case of both additions being applied
+        if target_body1 and target_body1:
+            pin.comp.features.removeFeatures.add(subtraction_body)
+
+        # If there is still a subtraction body, make it opaque
+        if subtraction_body: subtraction_body.opacity = 0.3
+
+        if pin.addition_body1 != None:
+            pin.addition_body1.opacity = 0.5
+
+        if pin.addition_body2 != None:
+            pin.addition_body2.opacity = 0.5
+
+
+        # Folding all operations neatly into a timeline block
         timeline_end = design.timeline.markerPosition
         timeline_group = design.timeline.timelineGroups.add(timeline_start,
                                                             timeline_end - 1)
@@ -101,21 +268,16 @@ def build(args, preview=False):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-def get_mating_force(parameters):
-    # todo: Implement get_mating_force
-    pass
-
-
 def size_parameters(size, length_width_ratio=1.6):
     """
-    This function generates a set of parameter values as a function of the
+    This function generates a set of parameter values as a function -of the
     value of size. This is intended to make a sort of "standardized"
     geometry, so that the different parameters scale well with the overall
     size. For example, the size of the ledge should not be linear with the
     overall with of the pin. That would make it uselessly small for small
     pins, and pointlessly large for large pins. Radius on the other hand,
     has an optimal value unrelated to the size of the pin: 1.5mm (to combat
-    fatigue). This can't be achieved on small pins because then they wouldn't
+    fatigue). This can't achieved on small pins because then they wouldn't
     have any thickness, so a compromise has to be made.
 
     Parameters unaffected by size: strain, nose_angle and all gaps.
@@ -124,65 +286,72 @@ def size_parameters(size, length_width_ratio=1.6):
     # logger = logging.getLogger("size-parameters")
     # Don't allow size to go below 3
     # Kind of a dirty hack, but avoids trouble.
-
-    if size <= 0.3:
-        size = 0.3
+    # if size <= 0.3:
+    #     size = 0.3
     width = size
     extrusion_distance = size
     length = size * length_width_ratio
-    inner_radius = 0
     gap_buffer = 0
+    max_gap_buffer = 0.08
     if 0 < size <= 0.3:
-        inner_radius = 0.03
-        gap_buffer = 0.030
+        gap_buffer = size / 10
     elif 0.3 < size <= 1:
-        inner_radius = 0.03 + (size - 0.3) / 12
         gap_buffer = 0.030 + (size - 0.3) / 25
     elif 1 < size <= 1.5:
-        inner_radius = 0.05 + (size - 0.3) / 12
-        gap_buffer = 0.050
+        gap_buffer = 0.050 + (max_gap_buffer-0.05)*(size - 1)/(1.5 - 1)
     elif 1.5 <= size:
-        inner_radius = 0.15
-        gap_buffer = 0.050
+        gap_buffer = max_gap_buffer
 
-    # thickness = width / 2 - inner_radius - gap_buffer
-    thickness = (width - 2*inner_radius - gap_buffer)/2
+
+    thickness = width/2 - gap_buffer
+
     middle_padding = thickness
-    ledge = 0.05 + width / 20
+    ledge = width / 12
 
     gap_buffer = round(gap_buffer, 4)
     thickness = round(thickness, 4)
     ledge = round(ledge, 4)
-    inner_radius = round(inner_radius, 4)
-    size = round(size, 4)
+    wall_thickness = round(size / 4, 4)
 
     advanced_params = {"width": width,
                        "length": length,
                        "extrusion_distance": extrusion_distance,
-                       "inner_radius": inner_radius,
                        "thickness": thickness,
                        "middle_padding": middle_padding,
                        "ledge": ledge,
+                       "gap_buffer": gap_buffer,
+                       "wall_thickness": wall_thickness
                        }
 
     # logger.debug(f"Size={round(size*10, 5)}mm.\tRadius={round(inner_radius*10, 5)}mm\t"
     #              f"Gap buffer={round(gap_buffer*10, 5)}mm")
     return advanced_params
 
+class SizeInputHandler(adsk.core.InputChangedEventHandler):
+    """
+    Reacts when the 'size' field is changed, and changes a set of parameters
+    by the "size_parameters" function. See its docstring for details.
+    """
+    def __init__(self, profile_data):
+        self.profile_data = profile_data
+        # self.logger = logging.getLogger(type(self).__name__)
+        super().__init__()
 
-class InputLimiter(adsk.core.ValidateInputsEventHandler):
-    """
-    Triggered when the user makes a change to any fields, and in fact it also
-    triggers a bunch of additional times. Don't know why.
-    If all the parameters are within acceptable intervals, it does nothing, and
-    allows ExecutePreviewHandler or ExecuteHandler to be triggered. If any
-    value is out of bounds, nothing happens, and any features that were
-    previously generated by ExecutePreviewHandler will disappear.
-    """
-    # logger = logging.getLogger("InputLimiter")
     def notify(self, args):
-        # todo: disallow size if below certain threshold
-        pass
+        # ui.messageBox("Triggered size input")
+        input_command = args.input
+        all_inputs = args.inputs.command.commandInputs
+        # self.logger.debug(f"Input = {input_command.id}")
+
+        if input_command.id == "size":
+            try:
+                # self.logger.debug(f"Size triggered")
+                size = input_command.value
+                parameters = size_parameters(size)
+                for key, value in parameters.items():
+                    all_inputs.itemById(key).value = value
+            except:
+                ui.messageBox(f"Error: {traceback.format_exc()}")
 
 
 class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
@@ -196,6 +365,7 @@ class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
 
     def notify(self, args):
         # self.logger.debug("Triggered.")
+        # ui.messageBox("Reached Preview")
         build(args, preview=True)
 
 
@@ -224,7 +394,7 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 # Delete the line that says "pass" for any method you want to use
 class SimplePinCommand(apper.Fusion360CommandBase):
 
-    # GEOMETRY_PARAMETERS = [
+    GEOMETRY_PARAMETERS = [
         # {"id": "nose_angle", "display_text": "Nose angle", "units": ""},
         # {"id": "thickness", "display_text": "Thickness", "units": "mm"},
         # {"id": "width", "display_text": "Width", "units": "mm"},
@@ -232,49 +402,27 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         # {"id": "extrusion_distance", "display_text": "Extrusion distance",
         #  "units": "mm"},
         # {"id": "strain", "display_text": "Strain", "units": ""},
+        # {"id": "pin_prestrain", "display_text": "Pin Prestrain", "units": ""},
         # {"id": "ledge", "display_text": "Ledge", "units": "mm"},
         # {"id": "middle_padding", "display_text": "Middle_padding",
         #  "units": "mm"},
-        # {"id": "inner_radius", "display_text": "Inner Radius", "units": "mm"}
-    # ]
-
+        # {"id": "gap_buffer", "display_text": "Gap buffer", "units": "mm"},
+        # {"id": "wall_thickness", "display_text": "Wall thickness", "units": "mm"}
+    ]
     SIMPLE_GEOMETRY_PARAMETERS = [
         {"id": "simple_size", "display_text": "Size", "units": "mm"},
         {"id": "simple_strain", "display_text": "Size", "units": ""}
     ]
     GAP_PARAMETERS = [
-        {"id": "gap_thickness", "display_text": "Gap thickness", "units": "mm"},
+        {"id": "width_gap", "display_text": "Gap thickness", "units": "mm"},
         {"id": "gap_extrusion", "display_text": "Gap extrusion", "units": "mm"},
-        {"id": "gap_length", "display_text": "Gap length", "units": "mm"},
+        {"id": "length_gap", "display_text": "Gap length", "units": "mm"},
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
+
     ]
 
-    # Default data for JSON file if it doesn't exist
-    FALLBACK_JSON = {
-        "default_profile": "default",
-        "default_gap_profile": "default",
-        "profiles": {
-            "default": {
-                "thickness": 0.3,
-                "length": 1.2,
-                "width": 0.9,
-                "extrusion_distance": 0.9,
-                "strain": 0.02,
-                "inner_radius": 0.1,
-                "ledge": 0.1,
-                "middle_padding": 0.3,
-                "nose_angle": 70
-            }
-        },
-        "gap_profiles": {
-            "default": {
-                "gap_thickness": 0.015,
-                "gap_length": 0.015,
-                "gap_extrusion": 0.015,
-                "extra_length": 0.06
-            }
-        }
-    }
+    # Default value for the size (fake) parameter.
+
 
     def __init__(self, name: str, options: dict):
         super().__init__(name, options)
@@ -289,12 +437,11 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         #     appdirs.user_log_dir(appname=appname, version=version))
         # config_folder = Path(
         #     appdirs.user_config_dir(appname=appname, version=version))
-
         # if not LOGS_PATH.exists():
         #     LOGS_PATH.mkdir(parents=True)
         # self.log_path = LOGS_PATH / "CantileverPinCommand.log"
 
-        self.profiles_path = CONFIG_PATH / "ProfileData" / "CantileverPinCommand.json"
+        self.profiles_path = CONFIG_PATH / "ProfileData" / "Pin.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -348,23 +495,26 @@ class SimplePinCommand(apper.Fusion360CommandBase):
             self.profile_data: dict
 
             # IO stuff
-            # Checking and fixing profile_data json
-            # If parent folder somehow is missing, add it
-            profile_path = Path(self.profiles_path)
-            if not self.profiles_path.parent.exists():
-                self.profiles_path.parent.mkdir(parents=True)
+            try:
+                # Checking and fixing profile_data json
+                # If parent folder somehow is missing, add it
+                profile_path = Path(self.profiles_path)
+                if not self.profiles_path.parent.exists():
+                    self.profiles_path.parent.mkdir(parents=True)
 
-            if not profile_path.is_file():
-                # Profile does not exist, recreate it from default
-                configure.reset_single_profile_data("CantileverPinCommand")
+                if not profile_path.is_file():
+                    # Profile does not exist, recreate it from default
+                    configure.reset_single_profile_data("PinCommand")
 
-            # Load profile data
-            with open(profile_path, "r") as f:
-                self.profile_data = json.load(f)
+                # Load profile data
+                with open(profile_path, "r") as f:
+                    self.profile_data = json.load(f)
+            except:
+                ui.messageBox(traceback.format_exc())
 
+            self.add_handlers()
             self.createGUI()
             # self.logger.debug("Finished GUI")
-            self.add_handlers()
             # self.logger.debug("Finished handlers.")
         except:
             ui.messageBox(traceback.format_exc())
@@ -379,9 +529,10 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         # Dividing command window into tabs
         inputs = self.command.commandInputs
         feature_tab = inputs.addTabCommandInput('tab_1', 'Feature').children
-        # prof_tab = inputs.addTabCommandInput('tab_2', 'Profiles').children
+        prof_tab = inputs.addTabCommandInput('tab_2', 'Profiles').children
         gap_tab = inputs.addTabCommandInput('tab_3', 'Gaps').children
 
+        # default_profile_name = self.profile_data["default_profile"]
         # size = self.profile_data["profiles"][default_profile_name]["width"]
         # strain = self.profile_data["profiles"][default_profile_name]["strain"]
 
@@ -398,23 +549,23 @@ class SimplePinCommand(apper.Fusion360CommandBase):
                                                           "Geometry")
         geo_list = geometry_group.children
 
-        # profile_list = geo_list.addDropDownCommandInput(
-        #     "profile_list", "Profile",
-        #     DropDownStyles.LabeledIconDropDownStyle)
-        # profile_list.maxVisibleItems = 10
-        # # profile_list.isFullWidth = True
+        profile_list = geo_list.addDropDownCommandInput(
+            "profile_list", "Profile",
+            DropDownStyles.LabeledIconDropDownStyle)
+        profile_list.maxVisibleItems = 10
+        # profile_list.isFullWidth = True
         blank_icon_path = self.resources_path / "white"
-        #
-        # default_profile_name = self.profile_data["default_profile"]
-        # items = profile_list.listItems
-        # for key in self.profile_data["profiles"]:
-        #     if key == default_profile_name:
-        #         items.add(key, True, str(blank_icon_path))
-        #     else:
-        #         items.add(key, False, str(blank_icon_path))
-        #
-        # default_profile_name = self.profile_data['default_profile']
-        # profile = self.profile_data["profiles"][default_profile_name]
+
+        default_profile_name = self.profile_data["default_profile"]
+        items = profile_list.listItems
+        for key in self.profile_data["profiles"]:
+            if key == default_profile_name:
+                items.add(key, True, str(blank_icon_path))
+            else:
+                items.add(key, False, str(blank_icon_path))
+
+        default_profile_name = self.profile_data['default_profile']
+        profile = self.profile_data["profiles"][default_profile_name]
 
         # SIZE is not in the list of parameters, because it is not a real
         # parameter. It is just a way to change all of them in a fell swoop
@@ -423,12 +574,12 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         geo_list.addValueInput("size", "SIZE", "mm", size_value)
 
 
-        # for geo_par in self.GEOMETRY_PARAMETERS:
-        #     geo_id = geo_par["id"]
-        #     display_text = geo_par["display_text"]
-        #     unit = geo_par["units"]
-        #     value = value_input(profile[geo_id])
-        #     geo_list.addValueInput(geo_id, display_text, unit, value)
+        for geo_par in self.GEOMETRY_PARAMETERS:
+            geo_id = geo_par["id"]
+            display_text = geo_par["display_text"]
+            unit = geo_par["units"]
+            value = value_input(profile[geo_id])
+            geo_list.addValueInput(geo_id, display_text, unit, value)
 
         # Gap section
         gap_group = feature_tab.addGroupCommandInput("gaps", "Gaps")
@@ -471,14 +622,25 @@ class SimplePinCommand(apper.Fusion360CommandBase):
                                   "a certain position and orientation. Then" \
                                   " select it here to position the pin."
 
-        cut_body_input = selections.addSelectionInput("cut_bodies",
-                                                      'Bodies to cut',
-                                                      'Bodies to cut')
-        cut_body_input.addSelectionFilter(SelectionCommandInput.Bodies)
-        cut_body_input.setSelectionLimits(0)
-        cut_body_input.tooltip = "Select the bodies that you want the pin to" \
-                                 " connect. A mating hole will be created for" \
-                                 " the pin."
+
+        target1_input = selections.addSelectionInput("target2",
+                                                        'Yellow body for slot',
+                                                        'Select body in direction of yellow line')
+
+        target1_input.addSelectionFilter(SelectionCommandInput.Bodies)
+        target1_input.setSelectionLimits(0, 1)
+        target1_input.tooltip = "First body to insert slot."
+
+        target2_input = selections.addSelectionInput("target1",
+                                                      'Blue body for slot',
+                                                      'Select body in direction of blue line')
+
+        target2_input.addSelectionFilter(SelectionCommandInput.Bodies)
+        target2_input.setSelectionLimits(0, 1)
+        target2_input.tooltip = "Inward body to insert slot."
+
+
+
 
         """
             Position section
@@ -524,7 +686,19 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         # joint_choice.toolClipFilename = str(y_tooltip_path)
         joint_choice.tooltip = "Choose the y location of the origin."
 
-        """ GAP TAB"""
+        """
+            Profile Tab
+            The gui elements make changes on the profile_data dictionary, but
+            does not perform IO.       
+            """
+        prof_settings = ProfileSettings(self.profile_data)
+        prof_settings.add_to_inputs(prof_tab)
+
+        """
+            Gap profile tab
+            The gui elements make changes on the profile_data dictionary, but
+            does not perform IO.
+            """
         prof_settings = GapProfileSettings(self.profile_data)
         prof_settings.add_to_inputs(gap_tab)
 
@@ -558,7 +732,10 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         # cmd.inputChanged.add(input_synchronizer)
         # handlers.append(input_synchronizer)
 
+        # simple_handler = SizeInputHandler(self.profile_data)
+        # cmd.inputChanged.add(simple_handler)
+        # handlers.append(simple_handler)
 
-        input_limiter = InputLimiter()
-        cmd.validateInputs.add(input_limiter)
-        handlers.append(input_limiter)
+        # input_limiter = InputLimiter()
+        # cmd.validateInputs.add(input_limiter)
+        # handlers.append(input_limiter)

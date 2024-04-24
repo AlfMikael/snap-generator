@@ -10,7 +10,7 @@ from pathlib import Path
 import shutil
 config = None
 
-CONFIGURABLE_COMMANDS = ["CantileverCommand", "CantileverPinCommand", "ExperimentalPinCommand"]
+CONFIGURABLE_COMMANDS = ["Cantilever", "Pin"]
 
 # Get config info from manifest file
 manifest_path = Path(__file__).parent.parent.parent / "snap-generator.manifest"

@@ -26,7 +26,7 @@ ui = app.userInterface
 handlers = []
 
 DEFAULT_SIZE = 1  # equivalent to 10 mm
-DEFAULT_STRAIN = 0.025
+DEFAULT_STRAIN = 0.024
 DEFAULT_NOSE_ANGLE = 70
 DEFAULT_BOTTOM_RADIUS = 0
 
@@ -282,7 +282,7 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
 
 
         # Loading references relative to this projects root
-        self.profiles_path = CONFIG_PATH / "ProfileData" / "CantileverCommand.json"
+        self.profiles_path = CONFIG_PATH / "ProfileData" / "Cantilever.json"
 
         self.root_dir = self.fusion_app.root_path
         self.resources_path = self.root_dir / "commands" / "resources" / \
@@ -374,7 +374,7 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
 
         if not profile_path.is_file():
             # Profile does not exist, recreate it from default
-            configure.reset_single_profile_data("CantileverCommand")
+            configure.reset_single_profile_data("Cantilever")
 
         # Load profile data
         with open(profile_path, "r") as f:

@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 from ..apper import apper
-from ..lib.snaplib.geometry import ExperimentalPin
+from ..lib.snaplib.geometry import Pin
 from ..lib.snaplib.control import value_input, JsonUpdater
 from ..lib.snaplib.control import ProfileSection, ProfileSettings, GapProfileSettings
 from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
@@ -41,7 +41,7 @@ def build(args, preview=False):
     """
     There is an important difference between this build function and the one that doesn't perform
     addition. The boolean joins and subtract is performed within this function, as opposed to within the
-    ExperimentalPin object.
+    Pin object.
     """
     # ui.messageBox("here")
     try:
@@ -53,7 +53,7 @@ def build(args, preview=False):
 
         inputs = args.command.commandInputs
         # Build parameters
-        parameter_ids = list(ExperimentalPin.get_parameter_dict().keys())
+        parameter_ids = list(Pin.get_parameter_dict().keys())
         pos_parameters = ["x_location", "y_location"]  # Origin point of the component
         parameters = {}  # Assembly of parameters for constructing the geometry
         value_parameters = list(set(parameter_ids) - set(pos_parameters))  # Subset of parameters that are int or float
@@ -111,7 +111,7 @@ def build(args, preview=False):
 
         # Performing the actual operations
         timeline_start = design.timeline.markerPosition
-        pin = ExperimentalPin(rootComp, parameters,
+        pin = Pin(rootComp, parameters,
                               target_joint_org=joint_origin,
                               target_body1=target_body1,
                               target_body2=target_body2)
@@ -462,7 +462,7 @@ class PinCommand(apper.Fusion360CommandBase):
         #     LOGS_PATH.mkdir(parents=True)
         # self.log_path = LOGS_PATH / "CantileverPinCommand.log"
 
-        self.profiles_path = CONFIG_PATH / "ProfileData" / "ExperimentalPinCommand.json"
+        self.profiles_path = CONFIG_PATH / "ProfileData" / "Pin.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
@@ -525,7 +525,7 @@ class PinCommand(apper.Fusion360CommandBase):
 
                 if not profile_path.is_file():
                     # Profile does not exist, recreate it from default
-                    configure.reset_single_profile_data("ExperimentalPinCommand")
+                    configure.reset_single_profile_data("Pin")
 
                 # Load profile data
                 with open(profile_path, "r") as f:

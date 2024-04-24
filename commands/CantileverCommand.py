@@ -23,7 +23,7 @@ from ..lib.snaplib import configure
 
 # Dirty hack to get a value from the way pin shape is calculated
 # So that the normal cantilever can be similar
-from .CantileverPinCommand_old import size_parameters as pin_size_parameters
+from .PinCommand import size_parameters as pin_size_parameters
 
 app = adsk.core.Application.get()
 ui = app.userInterface
@@ -58,7 +58,7 @@ def build(args, preview=False):
         except:
             # logger.error(f"Something went wrong with creating"
             #               f" parameter {par_id}")
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()) + f"{par_id}")
 
         joint_origin = None
         joint_input = inputs.itemById("selected_origin")
@@ -330,7 +330,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
         #     logs_folder.mkdir(parents=True)
         # self.log_path = logs_folder / "CantileverCommand.log"
 
-        self.profiles_path = CONFIG_PATH / "ProfileData" / "CantileverCommand.json"
+        self.profiles_path = CONFIG_PATH / "ProfileData" / "Cantilever.json"
         if not self.profiles_path.parent.exists():
             self.profiles_path.parent.mkdir(parents=True)
 
