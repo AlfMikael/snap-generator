@@ -242,7 +242,8 @@ class BaseSnap:
         tool_bodies = adsk.core.ObjectCollection.create()
         tool_bodies.add(addition_body)
         combine_input = combineFeatures.createInput(body_to_join, tool_bodies)
-        combineFeatures.add(combine_input)
+        result = combineFeatures.add(combine_input)
+        return result
 
     def _perform_cut(self, bodies_to_cut, subtraction_body):
         combineFeatures = self.comp.features.combineFeatures
@@ -353,6 +354,7 @@ class ExperimentalBaseSnap:
         sub_sketch = self.comp.sketches.add(sketch_plane)
         self._draw_sketch(sub_sketch, sub_sketch_data)
         subtraction_body = self._create_cut_body(parameters, sub_sketch)
+        self.subtraction_body = subtraction_body
 
         if cut_bodies:
             self._perform_cut(cut_bodies, subtraction_body)
@@ -441,6 +443,7 @@ class ExperimentalBaseSnap:
 
         # Return the newly created body.
         body = extrusion.bodies.item(0)
+
         return body
 
     def _create_join_body(self, parameters, sketch):
@@ -528,7 +531,8 @@ class ExperimentalBaseSnap:
         tool_bodies = adsk.core.ObjectCollection.create()
         tool_bodies.add(addition_body)
         combine_input = combineFeatures.createInput(body_to_join, tool_bodies)
-        combineFeatures.add(combine_input)
+        combined_features = combineFeatures.add(combine_input)
+        return combined_features
 
     # def _perform_join(self, bodies_to_join, addition_body):
     #     """ This is an altered version of the base function that takes multiple bodies. Probably pointless."""
@@ -953,7 +957,7 @@ class ExperimentalPin(ExperimentalBaseSnap):
 
 
     def __init__(self, parent_comp: Component, parameters: dict,
-                 target_joint_org=None, join_body=None, cut_bodies=tuple()):
+                 target_joint_org=None, target_body1=None, target_body2=None):
         """
         A new component is created which contains a body with a bendable shape.
         Additional operations are done depending on arguments.
@@ -979,7 +983,7 @@ class ExperimentalPin(ExperimentalBaseSnap):
         self.occurrence = parent_comp.occurrences.addNewComponent(matrix)
         self.comp = self.occurrence.component
         self.comp.name = self.component_name
-        self.cut_bodies = cut_bodies
+        # self.cut_bodies = cut_bodies
         self.subtraction_body = None
         self.addition_body1 = None
         self.addition_body2 = None
@@ -1004,8 +1008,8 @@ class ExperimentalPin(ExperimentalBaseSnap):
         cant_body = self._create_join_body(parameters, cant_sketch)
         cant_body.name = "Pin body"
 
-        if join_body:
-            self._perform_join(join_body, cant_body)
+        # if join_body:
+        #     self._perform_join(join_body, cant_body)
 
         # Create subtraction body
         sub_sketch_data = self._sketch_cut_properties(parameters)
@@ -1031,20 +1035,35 @@ class ExperimentalPin(ExperimentalBaseSnap):
         self.addition_body2 = mirror_feature.bodies[0]
         self.addition_body2.name = "Addition body 2"
 
-        # Cut into the addition body
-        addition_bodies = [self.addition_body1, self.addition_body2]
+        if target_body1:
+            # First combine
+            combined_features = self._perform_join(target_body1, self.addition_body1)
 
-        self._perform_cut(addition_bodies, subtraction_body)
-
-
-        if cut_bodies:
-            # First add addition-body then subtract
-            self._perform_cut(cut_bodies, subtraction_body)
-            # Remove the subtraction body
-            self.comp.features.removeFeatures.add(subtraction_body)
+            # Then subtract
+            body_to_cut = combined_features.bodies.item(0)
+            self._perform_cut([body_to_cut], subtraction_body)
         else:
-            # If no cutting, keep subtraction body
-            self.subtraction_body = subtraction_body
+            self._perform_cut([self.addition_body1], subtraction_body)
+
+        if target_body2:
+            # First combine
+            combined_features = self._perform_join(target_body2, self.addition_body2)
+
+            # Then subtract
+            body_to_cut = combined_features.bodies.item(0)
+            self._perform_cut([body_to_cut], subtraction_body)
+        else:
+            self._perform_cut([self.addition_body2], subtraction_body)
+
+        #
+        # if target_body2:
+        #     self._perform_join(self.addition_body2, target_body2)
+        # else:
+        #     self._perform_cut([self.addition_body1], subtraction_body)
+
+
+        # # Cut into the addition body
+        # addition_bodies = [self.addition_body1, self.addition_body2]
 
 
 

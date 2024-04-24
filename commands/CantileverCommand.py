@@ -23,7 +23,7 @@ from ..lib.snaplib import configure
 
 # Dirty hack to get a value from the way pin shape is calculated
 # So that the normal cantilever can be similar
-from .CantileverPinCommand import size_parameters as pin_size_parameters
+from .CantileverPinCommand_old import size_parameters as pin_size_parameters
 
 app = adsk.core.Application.get()
 ui = app.userInterface

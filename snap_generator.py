@@ -93,11 +93,11 @@ try:
 
 
 
-    pin_visible = app_settings["pin_simple_enabled"]
-    from .commands.SimpleCantileverPinCommand import SimpleCantileverPinCommand
+    simple_pin_visible = app_settings["pin_simple_enabled"]
+    from .commands.SimplePinCommand import SimplePinCommand
     my_addin.add_command(
         'Simple Pin',
-        SimpleCantileverPinCommand,
+        SimplePinCommand,
         {
             'cmd_description': 'Create a snap pin using a single parameter.',
             'cmd_id': 'simple_pin',
@@ -109,17 +109,39 @@ try:
             'cmd_resources': 'CantileverPinCommand',
             # 'drop_down_resources': 'CantileverCommand',
             'add_to_drop_down': True,
-            'command_visible': pin_visible,
+            'command_visible': simple_pin_visible,
+            'command_promoted': False,
+        }
+    )
+
+    simple_pin_visible = app_settings["pin_simple_enabled"]
+    from .commands.ExperimentalSimplePinCommand import ExperimentalSimplePinCommand
+    my_addin.add_command(
+        'Experimental Simple Pin',
+        ExperimentalSimplePinCommand,
+        {
+            'cmd_description': 'Create a snap pin using a single parameter.',
+            'cmd_id': 'simple_pin_experimental',
+            'workspace': 'FusionSolidEnvironment',
+            'toolbar_panel_id': 'SolidCreatePanel',
+            "drop_down_cmd_id": "snap_drop_down",
+            "drop_down_name": "Snap Generator",
+            'toolbar_tab_id': 'SolidTab',
+            'cmd_resources': 'CantileverPinCommand',
+            # 'drop_down_resources': 'CantileverCommand',
+            'add_to_drop_down': True,
+            'command_visible': simple_pin_visible,
             'command_promoted': False,
         }
     )
 
 
+
     pin_visible = app_settings["pin_advanced_enabled"]
-    from .commands.CantileverPinCommand import CantileverPinCommand
+    from .commands.PinCommand import PinCommand
     my_addin.add_command(
         'Pin',
-        CantileverPinCommand,
+        PinCommand,
         {
             'cmd_description': 'Create a cantilever snap pin.'
                                ' parameter to get a "standardized" shape that is appropriate for '
@@ -141,25 +163,49 @@ try:
         }
     )
 
-    from .commands.ExperimentalPinCommand import ExperimentalPinCommand
-    my_addin.add_command(
-        'Experimmental Pin',
-        ExperimentalPinCommand,
-        {
-            'cmd_description': 'Experimental Pin command',
-            'cmd_id': 'experimental_pin',
-            'workspace': 'FusionSolidEnvironment',
-            'toolbar_panel_id': 'SolidCreatePanel',
-            "drop_down_cmd_id": "snap_drop_down",
-            "drop_down_name": "Snap Generator",
-            'toolbar_tab_id': 'SolidTab',
-            'cmd_resources': 'CantileverPinCommand',
-            # 'drop_down_resources': 'CantileverPinCommand40',
-            'add_to_drop_down': True,
-            'command_visible': True,
-            'command_promoted': False,
-        }
-    )
+    # pin_visible = app_settings["pin_advanced_enabled"]
+    # from .commands.ExperimentalPinCommand import ExperimentalPinCommand
+    # my_addin.add_command(
+    #     'Pin',
+    #     ExperimentalPinCommand,
+    #     {
+    #         'cmd_description': 'Snap Pin',
+    #         'cmd_id': 'pin',
+    #         'workspace': 'FusionSolidEnvironment',
+    #         'toolbar_panel_id': 'SolidCreatePanel',
+    #         "drop_down_cmd_id": "snap_drop_down",
+    #         "drop_down_name": "Snap Generator",
+    #         'toolbar_tab_id': 'SolidTab',
+    #         'cmd_resources': 'CantileverPinCommand',
+    #         # 'drop_down_resources': 'CantileverPinCommand40',
+    #         'add_to_drop_down': True,
+    #         'command_visible': pin_visible,
+    #         'command_promoted': False,
+    #     }
+    # )
+
+    # pin_visible = app_settings["pin_advanced_enabled"]
+    # from .commands.CantileverPinCommand import ExperimentalPinCommandAddition
+    # my_addin.add_command(
+    #     'Addition Pin',
+    #     ExperimentalPinCommandAddition,
+    #     {
+    #         'cmd_description': 'Snap Pin',
+    #         'cmd_id': 'pin_addition',
+    #         'workspace': 'FusionSolidEnvironment',
+    #         'toolbar_panel_id': 'SolidCreatePanel',
+    #         "drop_down_cmd_id": "snap_drop_down",
+    #         "drop_down_name": "Snap Generator",
+    #         'toolbar_tab_id': 'SolidTab',
+    #         'cmd_resources': 'CantileverPinCommand',
+    #         # 'drop_down_resources': 'CantileverPinCommand40',
+    #         'add_to_drop_down': True,
+    #         'command_visible': pin_visible,
+    #         'command_promoted': False,
+    #     }
+    # )
+
+
 
 
 
