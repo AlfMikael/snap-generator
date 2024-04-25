@@ -96,10 +96,9 @@ for Pin and Cantilever. They work a little differently for each.
 ![Settings page 1](docs/images_second_documentation/pin_menu.png) 
 
 The Pin is a standalone snap-geometry, and my preferred go-to attaching two components together. There are two main benefits to using a pin.
-1. It eliminates the issue of having to reprint, because the gap parameters are wrong. This
-is because the gap parameters are **applied to the pin**, not the slotted part. Which means that
-after you have slotted the part, and you find that the pin doesn't fit, you may adjust only
-the gap parameters, and reprint a new pin that fits better.
+1. It eliminates the issue of having to reprint because of wrong gap parameters, as the gap parameters are **applied to the pin**, not the slotted part. Which means that
+after you have slotted the part. If you find that the pin doesn't fit, you only have to 
+generate a new pin. The main part stays functional.
 2. It allows the snap-geometry to be printed in its optimal orientation. A Pin or Cantilever
 that is printed "pointing upwards" from the build plate, will usually have a disappointing performance.
 It will be susceptible to deformation, fracture and especially fatigue failure. 
