@@ -92,8 +92,10 @@ inaccuracies in the manufacturing process. This is especially important for FFF
 for Pin and Cantilever. They work a little differently for each.
 
 ## The Pin
-The Pin is a standalone snap-geometry, and my preferred go to for most cases where
-the goal is to attach two components together. There are two main benefits to using a pin.
+![Settings page 1](docs/images_original_documentation/the_pin_isometric_illustration2.png) 
+![Settings page 1](docs/images_second_documentation/pin_menu.png) 
+
+The Pin is a standalone snap-geometry, and my preferred go-to attaching two components together. There are two main benefits to using a pin.
 1. It eliminates the issue of having to reprint, because the gap parameters are wrong. This
 is because the gap parameters are **applied to the pin**, not the slotted part. Which means that
 after you have slotted the part, and you find that the pin doesn't fit, you may adjust only
@@ -113,8 +115,7 @@ scaffolding around the pin, should the part that is being slotted not have enoug
 the slot. When selecting the bodies to create slots into, the ordering matters. For that reason, there
 are some illustrative lines that protrude from the Pin to assist with identifying which part is which.
 
-![Settings page 1](docs/images_original_documentation/the_pin_isometric_illustration2.png) 
-![Settings page 1](docs/images_second_documentation/pin_menu.png)  
+ 
 
 
 
