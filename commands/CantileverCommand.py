@@ -314,9 +314,9 @@ class CantileverCommand(apper.Fusion360CommandBase):
         {"id": "strain", "display_text": "Strain", "units": ""},
     ]
     GAP_PARAMETERS = [
-        {"id": "gap_thickness", "display_text": "Gap thickness", "units": "mm"},
-        {"id": "gap_extrusion", "display_text": "Gap extrusion", "units": "mm"},
-        {"id": "gap_length", "display_text": "Gap length", "units": "mm"},
+        {"id": "width_gap", "display_text": "Thickness gap", "units": "mm"},
+        {"id": "extrusion_gap", "display_text": "Extrusion gap", "units": "mm"},
+        {"id": "length_gap", "display_text": "Length gap", "units": "mm"},
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
     ]
 

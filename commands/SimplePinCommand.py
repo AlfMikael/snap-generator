@@ -80,7 +80,7 @@ def build(args, preview=False):
 
         # Retrieve the data from the chosen parameters
         try:
-            for par_id in ["width_gap", "gap_extrusion", "length_gap", "extra_length"]:
+            for par_id in ["width_gap", "extrusion_gap", "length_gap", "extra_length"]:
                 par_value = inputs.itemById(par_id).value
                 parameters[par_id] = par_value
             for par_id in pos_parameters:
@@ -419,11 +419,10 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         {"id": "simple_strain", "display_text": "Size", "units": ""}
     ]
     GAP_PARAMETERS = [
-        {"id": "width_gap", "display_text": "Gap thickness", "units": "mm"},
-        {"id": "gap_extrusion", "display_text": "Gap extrusion", "units": "mm"},
-        {"id": "length_gap", "display_text": "Gap length", "units": "mm"},
+        {"id": "width_gap", "display_text": "Thickness gap", "units": "mm"},
+        {"id": "extrusion_gap", "display_text": "Extrusion gap", "units": "mm"},
+        {"id": "length_gap", "display_text": "Length gap", "units": "mm"},
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
-
     ]
 
     # Default value for the size (fake) parameter.

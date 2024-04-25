@@ -131,7 +131,7 @@ class BaseSnap:
                                                                  sweep_angle)
 
     def _create_cut_body(self, parameters, sketch):
-        gap = parameters['gap_extrusion']
+        gap = parameters['extrusion_gap']
         if self.gap_in_cut_body:
             extrusion_distance = parameters['extrusion_distance'] + 2 * gap
         else:
@@ -159,7 +159,7 @@ class BaseSnap:
 
     def _create_join_body(self, parameters, sketch):
         extrusion_distance = parameters['extrusion_distance']
-        gap = parameters['gap_extrusion']
+        gap = parameters['extrusion_gap']
 
         if self.gap_in_cut_body:
             total_distance = extrusion_distance
@@ -419,7 +419,7 @@ class ExperimentalBaseSnap:
                                                                  sweep_angle)
 
     def _create_cut_body(self, parameters, sketch):
-        gap = parameters['gap_extrusion']
+        gap = parameters['extrusion_gap']
         if self.gap_in_cut_body:
             extrusion_distance = parameters['extrusion_distance'] + 2 * gap
         else:
@@ -448,7 +448,7 @@ class ExperimentalBaseSnap:
 
     def _create_join_body(self, parameters, sketch):
         extrusion_distance = parameters['extrusion_distance']
-        gap = parameters['gap_extrusion']
+        gap = parameters['extrusion_gap']
 
         if self.gap_in_cut_body:
             total_distance = extrusion_distance
@@ -649,8 +649,8 @@ class Cantilever(BaseSnap):
         strain = parameters['strain']
         nose_angle = math.radians(parameters["nose_angle"])
 
-        g_l = parameters['gap_length']
-        g_h = parameters['gap_thickness']
+        g_l = parameters['length_gap']
+        g_h = parameters['width_gap']
         x_l = parameters['extra_length']
 
         # Determine how the profile should be drawn, depending on the value of
@@ -702,9 +702,9 @@ class Cantilever(BaseSnap):
             # "wall_thickness": (float, int),
             "length": (float, int),
             "nose_angle": (float, int),
-            "gap_length": (float, int),
-            "gap_thickness": (float, int),
-            "gap_extrusion": (float, int),
+            "length_gap": (float, int),
+            "width_gap": (float, int),
+            "extrusion_gap": (float, int),
             "extra_length": (float, int),
             "x_location": (str,),
             "y_location": (str,)
@@ -1196,7 +1196,7 @@ class Pin(ExperimentalBaseSnap):
             "nose_angle": (float, int),
             "length_gap": (float, int),
             "width_gap": (float, int),
-            "gap_extrusion": (float, int),
+            "extrusion_gap": (float, int),
             "extra_length": (float, int),
             "x_location": (str,),
             "y_location": (str,),
@@ -1215,17 +1215,17 @@ class Pin(ExperimentalBaseSnap):
         y_loc = parameters["y_location"]
         extrusion_distance = parameters["extrusion_distance"]
         width = parameters["width"]
-        gap_extrusion = parameters["gap_extrusion"]
+        extrusion_gap = parameters["extrusion_gap"]
         x_offset = 0
         y_offset = 0
         z_offset = 0
 
         if x_loc == "top":
-            x_offset = extrusion_distance - gap_extrusion
+            x_offset = extrusion_distance - extrusion_gap
         elif x_loc == "middle":
-            x_offset = extrusion_distance / 2 - gap_extrusion
+            x_offset = extrusion_distance / 2 - extrusion_gap
         elif x_loc == "bottom":
-            x_offset = 0 - gap_extrusion
+            x_offset = 0 - extrusion_gap
 
         if y_loc == "top":
             y_offset = -width / 2

@@ -435,11 +435,10 @@ class PinCommand(apper.Fusion360CommandBase):
         {"id": "simple_strain", "display_text": "Size", "units": ""}
     ]
     GAP_PARAMETERS = [
-        {"id": "width_gap", "display_text": "Gap thickness", "units": "mm"},
-        {"id": "gap_extrusion", "display_text": "Gap extrusion", "units": "mm"},
-        {"id": "length_gap", "display_text": "Gap length", "units": "mm"},
+        {"id": "width_gap", "display_text": "Thickness gap", "units": "mm"},
+        {"id": "extrusion_gap", "display_text": "Extrusion gap", "units": "mm"},
+        {"id": "length_gap", "display_text": "Length gap", "units": "mm"},
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
-
     ]
 
     # Default value for the size (fake) parameter.

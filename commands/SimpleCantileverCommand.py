@@ -29,6 +29,8 @@ DEFAULT_SIZE = 1  # equivalent to 10 mm
 DEFAULT_STRAIN = 0.024
 DEFAULT_NOSE_ANGLE = 70
 DEFAULT_BOTTOM_RADIUS = 0
+DEFAULT_X_POSITION = "middle"
+DEFAULT_Y_POSITION = "top"
 
 def build(args, preview=False):
     try:
@@ -42,6 +44,8 @@ def build(args, preview=False):
         parameter_ids = list(Cantilever.get_parameter_dict().keys())
         pos_parameters = ["x_location", "y_location"]
         parameters = {}
+        parameters["x_location"] = DEFAULT_X_POSITION
+        parameters["y_location"] = DEFAULT_Y_POSITION
 
         # Extracting the value parameters from all parameters
         value_parameters = list(set(parameter_ids) - set(pos_parameters))
@@ -59,7 +63,7 @@ def build(args, preview=False):
 
         # Retrieve the data from the parameters that are specified
         try:
-            for par_id in ["extra_length", "gap_length", "gap_thickness", "gap_extrusion"]:
+            for par_id in ["extra_length", "length_gap", "width_gap", "extrusion_gap"]:
                 par_value = inputs.itemById(par_id).value
                 parameters[par_id] = par_value
             for par_id in pos_parameters:
@@ -68,7 +72,7 @@ def build(args, preview=False):
         except:
             # logging.error(f"Something went wrong with creating"
             #               f" parameter {par_id}")
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()) + f"\n{par_id=}")
 
 
 
@@ -239,9 +243,9 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
         {"id": "strain", "display_text": "Strain", "units": ""},
     ]
     GAP_PARAMETERS = [
-        {"id": "gap_thickness", "display_text": "Gap thickness", "units": "mm"},
-        {"id": "gap_extrusion", "display_text": "Gap extrusion", "units": "mm"},
-        {"id": "gap_length", "display_text": "Gap length", "units": "mm"},
+        {"id": "width_gap", "display_text": "Thickness gap", "units": "mm"},
+        {"id": "extrusion_gap", "display_text": "Extrusion gap", "units": "mm"},
+        {"id": "length_gap", "display_text": "Length gap", "units": "mm"},
         {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
     ]
 

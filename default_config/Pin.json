@@ -20,14 +20,14 @@
     "default": {
       "width_gap": 0.02,
       "length_gap": 0.02,
-      "gap_extrusion": 0.02,
+      "extrusion_gap": 0.02,
       "length_gap": 0.06,
       "extra_length": 0.08
     },
       "zero": {
       "width_gap": 0,
       "length_gap": 0,
-      "gap_extrusion": 0,
+      "extrusion_gap": 0,
       "length_gap": 0,
       "extra_length": 0.08
     }
