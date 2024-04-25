@@ -158,7 +158,6 @@ at the end of the slot, as seen in figure 1.
 ### Parameter overview
 
 *Fig 3: Pin parameters*
-
 ![parameter_meanings](docs/images_second_documentation/Pin parameters.png)
 
 
