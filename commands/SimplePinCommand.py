@@ -41,6 +41,8 @@ DEFAULT_SIZE = 1  # = 10mm
 DEFAULT_STRAIN = 0.012
 DEFAULT_NOSE_ANGLE = 70
 DEFAULT_PIN_PRESTRAIN = 0.012
+DEFAULT_X_LOCATION = "middle"
+DEFAULT_Y_LOCATION = "middle"
 
 def build(args, preview=False):
     """
@@ -59,7 +61,10 @@ def build(args, preview=False):
         # Build parameters
         parameter_ids = list(Pin.get_parameter_dict().keys())
         pos_parameters = ["x_location", "y_location"]
+        pos_parameters = []
         parameters = {}
+        parameters["x_location"] = DEFAULT_X_LOCATION
+        parameters["y_location"] = DEFAULT_Y_LOCATION
 
         # Calculate parameters on the basis of size
         size = inputs.itemById("size").value
@@ -84,7 +89,7 @@ def build(args, preview=False):
         except:
             # logging.error(f"Something went wrong with creating"
             #               f" parameter {par_id}")
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()) + f"\n{par_id=}")
 
 
         joint_origin = None
@@ -529,7 +534,7 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         # Dividing command window into tabs
         inputs = self.command.commandInputs
         feature_tab = inputs.addTabCommandInput('tab_1', 'Feature').children
-        prof_tab = inputs.addTabCommandInput('tab_2', 'Profiles').children
+        # prof_tab = inputs.addTabCommandInput('tab_2', 'Profiles').children
         gap_tab = inputs.addTabCommandInput('tab_3', 'Gaps').children
 
         # default_profile_name = self.profile_data["default_profile"]
@@ -549,23 +554,23 @@ class SimplePinCommand(apper.Fusion360CommandBase):
                                                           "Geometry")
         geo_list = geometry_group.children
 
-        profile_list = geo_list.addDropDownCommandInput(
-            "profile_list", "Profile",
-            DropDownStyles.LabeledIconDropDownStyle)
-        profile_list.maxVisibleItems = 10
-        # profile_list.isFullWidth = True
+        # profile_list = geo_list.addDropDownCommandInput(
+        #     "profile_list", "Profile",
+        #     DropDownStyles.LabeledIconDropDownStyle)
+        # profile_list.maxVisibleItems = 10
+        # # profile_list.isFullWidth = True
         blank_icon_path = self.resources_path / "white"
 
-        default_profile_name = self.profile_data["default_profile"]
-        items = profile_list.listItems
-        for key in self.profile_data["profiles"]:
-            if key == default_profile_name:
-                items.add(key, True, str(blank_icon_path))
-            else:
-                items.add(key, False, str(blank_icon_path))
-
-        default_profile_name = self.profile_data['default_profile']
-        profile = self.profile_data["profiles"][default_profile_name]
+        # default_profile_name = self.profile_data["default_profile"]
+        # items = profile_list.listItems
+        # for key in self.profile_data["profiles"]:
+        #     if key == default_profile_name:
+        #         items.add(key, True, str(blank_icon_path))
+        #     else:
+        #         items.add(key, False, str(blank_icon_path))
+        #
+        # default_profile_name = self.profile_data['default_profile']
+        # profile = self.profile_data["profiles"][default_profile_name]
 
         # SIZE is not in the list of parameters, because it is not a real
         # parameter. It is just a way to change all of them in a fell swoop
@@ -651,48 +656,48 @@ class SimplePinCommand(apper.Fusion360CommandBase):
             dimensions than 16x16. Probably a bug.
             """
 
-        # For choosing x_location
-        joint_choice = selections.addButtonRowCommandInput("x_location",
-                                                            "x location",
-                                                            False)
-        joint_choice.tooltip = "Choose the x-location of the origin."
-        x_items = joint_choice.listItems
+        # # For choosing x_location
+        # joint_choice = selections.addButtonRowCommandInput("x_location",
+        #                                                     "x location",
+        #                                                     False)
+        # joint_choice.tooltip = "Choose the x-location of the origin."
+        # x_items = joint_choice.listItems
+        #
+        # x_top_folder_path = self.resources_path / "joint_pos_thickness" / "top"
+        # x_middle_folder_path = self.resources_path / "joint_pos_thickness" / "middle"
+        # x_bottom_folder_path = self.resources_path / "joint_pos_thickness" / "bottom"
+        #
+        # x_items.add("top", False, str(x_top_folder_path))
+        # x_items.add("middle", True, str(x_middle_folder_path))
+        # x_items.add("bottom", False, str(x_bottom_folder_path))
+        #
+        # # x_tooltip_path = self.RESOURCE_FOLDER / "joint_pos_height" / "tooltipclip.png"
+        # # joint_choice.toolClipFilename = str(x_tooltip_path)
+        #
+        # # y_location
+        # joint_choice = selections.addButtonRowCommandInput("y_location",
+        #                                                     "y location",
+        #                                                     False)
+        # y_items = joint_choice.listItems
+        # y_top_folder_path = self.resources_path / "joint_pos_length" / "top"
+        # y_middle_folder_path = self.resources_path / "joint_pos_length" / "middle"
+        # y_bottom_folder_path = self.resources_path / "joint_pos_length" / "bottom"
+        #
+        # y_items.add("top", False, str(y_top_folder_path))
+        # y_items.add("middle", True, str(y_middle_folder_path))
+        # y_items.add("bottom", False, str(y_bottom_folder_path))
+        #
+        # # y_tooltip_path = self.RESOURCE_FOLDER / "joint_pos_length" / "tooltipclip.png"
+        # # joint_choice.toolClipFilename = str(y_tooltip_path)
+        # joint_choice.tooltip = "Choose the y location of the origin."
 
-        x_top_folder_path = self.resources_path / "joint_pos_thickness" / "top"
-        x_middle_folder_path = self.resources_path / "joint_pos_thickness" / "middle"
-        x_bottom_folder_path = self.resources_path / "joint_pos_thickness" / "bottom"
-
-        x_items.add("top", False, str(x_top_folder_path))
-        x_items.add("middle", True, str(x_middle_folder_path))
-        x_items.add("bottom", False, str(x_bottom_folder_path))
-
-        # x_tooltip_path = self.RESOURCE_FOLDER / "joint_pos_height" / "tooltipclip.png"
-        # joint_choice.toolClipFilename = str(x_tooltip_path)
-
-        # y_location
-        joint_choice = selections.addButtonRowCommandInput("y_location",
-                                                            "y location",
-                                                            False)
-        y_items = joint_choice.listItems
-        y_top_folder_path = self.resources_path / "joint_pos_length" / "top"
-        y_middle_folder_path = self.resources_path / "joint_pos_length" / "middle"
-        y_bottom_folder_path = self.resources_path / "joint_pos_length" / "bottom"
-
-        y_items.add("top", False, str(y_top_folder_path))
-        y_items.add("middle", True, str(y_middle_folder_path))
-        y_items.add("bottom", False, str(y_bottom_folder_path))
-
-        # y_tooltip_path = self.RESOURCE_FOLDER / "joint_pos_length" / "tooltipclip.png"
-        # joint_choice.toolClipFilename = str(y_tooltip_path)
-        joint_choice.tooltip = "Choose the y location of the origin."
-
-        """
-            Profile Tab
-            The gui elements make changes on the profile_data dictionary, but
-            does not perform IO.       
-            """
-        prof_settings = ProfileSettings(self.profile_data)
-        prof_settings.add_to_inputs(prof_tab)
+        # """
+        #     Profile Tab
+        #     The gui elements make changes on the profile_data dictionary, but
+        #     does not perform IO.
+        #     """
+        # prof_settings = ProfileSettings(self.profile_data)
+        # prof_settings.add_to_inputs(prof_tab)
 
         """
             Gap profile tab
@@ -714,15 +719,15 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         onExecute = MyCommandExecuteHandler()
         cmd.execute.add(onExecute)
         handlers.append(onExecute)
+        #
+        # profile_switcher = ProfileSwitcher(self.profile_data)
+        # cmd.inputChanged.add(profile_switcher)
+        # handlers.append(profile_switcher)
 
-        profile_switcher = ProfileSwitcher(self.profile_data)
-        cmd.inputChanged.add(profile_switcher)
-        handlers.append(profile_switcher)
-
-        profile_modifier = ProfileModifier(self.profile_data,
-                                           self.resources_path)
-        cmd.inputChanged.add(profile_modifier)
-        handlers.append(profile_modifier)
+        # profile_modifier = ProfileModifier(self.profile_data,
+        #                                    self.resources_path)
+        # cmd.inputChanged.add(profile_modifier)
+        # handlers.append(profile_modifier)
 
         j_updater = JsonUpdater(self.profile_data, self.profiles_path)
         cmd.inputChanged.add(j_updater)

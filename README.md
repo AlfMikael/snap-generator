@@ -24,7 +24,7 @@ in the list, and click _run_. Warning: If you already have an old version runnin
 this needs to be stopped because it can cause issues.
 
 It should now appear in the SOLID tab, under _CREATE_.
-![Position](docs/images/position_in_workspace.png)
+![Position](docs/images_original_documentation/position_in_workspace.png)
 
 Usage
 ----
@@ -49,7 +49,7 @@ the different snap features. In the case of the single cantilever, the adjustmen
 are all done to the slot, but in the case of the pin, the adjustments change the
 pin itself.
 
-![Settings page 1](docs/images/command_window.png)
+![Settings page 1](docs/images_original_documentation/command_window.png)
 
 In the __Profiles__ tab, profiles can be created, overwritten and made into the
 default profile. The __Gaps__ tab works the same way.
@@ -58,13 +58,13 @@ default profile. The __Gaps__ tab works the same way.
 ### Joint origin
 The shape can be positioned and oriented in space by a _joint origin_, which
 is a built-in feature. It is found in the ASSEMBLE dropdown.
-![Joint origin location](docs/images/joint_origin_position.png)
+![Joint origin location](docs/images_original_documentation/joint_origin_position.png)
 
 After selecting a starting location, the joint origin can be freely rotated and
 moved around. The joint origin has a red, blue and green vector. The shape
 will bend in the opposite direction to the green vector. Or, equivalently, the
 'nose' of the shape will point in the direction of the green vector.
-![Joint origin location](docs/images/joint_origin_direction_illustration.png)
+![Joint origin location](docs/images_original_documentation/joint_origin_direction_illustration.png)
 
 
 
@@ -74,10 +74,10 @@ This is one of the most fundamental and commonly used geometries for snap fits.
 * If you don't select a _Body to join_, a new component gets created.
 
 
-![Settings page 1](docs/images/cantilever_isometric_illustration.png) ![Settings page 1](docs/images/cantilever_settings_1.png)  
+![Settings page 1](docs/images_original_documentation/cantilever_isometric_illustration.png) ![Settings page 1](docs/images_original_documentation/cantilever_settings_1.png)  
 
 Parameters:
-![Settings page 1](docs/images/cantilever_drawing.png) 
+![Settings page 1](docs/images_original_documentation/cantilever_drawing.png) 
 
 
 ## The pin
@@ -100,8 +100,8 @@ SIZE doesn't follow to any actual standards, but works like this:
   make a compromise between getting radius close to 1.5mm, maintaining
   a 0.6mm buffer for gap thickness, and maximising thickness.
 
-![Settings page 1](docs/images/the_pin_isometric_illustration2.png) ![Settings page 1](docs/images/pin_settings_1.png)  
+![Settings page 1](docs/images_original_documentation/the_pin_isometric_illustration2.png) ![Settings page 1](docs/images_original_documentation/pin_settings_1.png)  
 
 
 Parameters:
-![parameter_meanings](docs/images/cantileverPin_drawing.png)
+![parameter_meanings](docs/images_original_documentation/cantileverPin_drawing.png)
