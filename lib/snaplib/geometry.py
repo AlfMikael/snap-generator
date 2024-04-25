@@ -599,7 +599,8 @@ class Cantilever(BaseSnap):
     def _sketch_join_properties(self, parameters):
         # Parameters for drawing the profile
         r_top = parameters['top_radius']
-        r_bot = parameters['bottom_radius']
+        # todo: change geometry code to remove r_bot
+        r_bot = 0
         th = parameters['thickness']
         l = parameters['length']
         strain = parameters['strain']
@@ -642,7 +643,8 @@ class Cantilever(BaseSnap):
 
     def _sketch_cut_properties(self, parameters):
         # Parameters for drawing the profile
-        r_bot = parameters['bottom_radius']
+        # todo: change geometry code to remove r_bot
+        r_bot = 0
         r_top = parameters['top_radius']
         th = parameters['thickness']
         length = parameters['length']
@@ -695,7 +697,6 @@ class Cantilever(BaseSnap):
     def get_parameter_dict():
         PARAMETERS = {
             "top_radius": (float, int),
-            "bottom_radius": (float, int),
             "strain": (float, int),
             "extrusion_distance": (float, int),
             "thickness": (float, int),
@@ -713,7 +714,8 @@ class Cantilever(BaseSnap):
 
     def _get_offsets(self, parameters):
         ex_dist = parameters['extrusion_distance']
-        bot_rad = parameters['bottom_radius']
+        # todo: Remmove bot_rad
+        bot_rad = 0
         thickness = parameters['thickness']
         theta = math.atan(parameters['length'] / (parameters['thickness'] / 2))
         x_offset = 0

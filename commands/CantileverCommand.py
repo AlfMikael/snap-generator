@@ -305,7 +305,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
 
     GEOMETRY_PARAMETERS = [
         {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},
-        {"id": "bottom_radius", "display_text": "Bottom Radius", "units": "mm"},
         {"id": "nose_angle", "display_text": "Nose angle", "units": ""},
         {"id": "thickness", "display_text": "Thickness", "units": "mm"},
         {"id": "length", "display_text": "Length", "units": "mm"},
