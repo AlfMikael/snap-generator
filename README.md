@@ -139,13 +139,11 @@ the gap disappears.
 
 
 *Fig 1: How it will actually look when pin is inserted*
-
 ![parameter_meanings](docs/images_second_documentation/strain_illustration2.png)
 
 
 
 *Fig 2: The way it looks in Fusion*
-
 ![parameter_meanings](docs/images_second_documentation/strain_illustration.png)
 
 
@@ -160,7 +158,6 @@ at the end of the slot, as seen in figure 1.
 ### Parameter overview
 
 *Fig 3: Pin parameters*
-
 ![parameter_meanings](docs/images_second_documentation/Pin parameters.png)
 
 
