@@ -49,6 +49,8 @@ class BaseSnap:
         """
         Step 2: Create joint between selected joint origin and component. 
         """
+        # Hotfix for releasing it from parent so that joint will work
+        self.occurrence.isGroundToParent = False
         offsets = self._get_offsets(parameters)
         joint_origin = self._create_joint_origin(*offsets)
         if target_joint_org:
@@ -782,6 +784,8 @@ class Pin(ExperimentalBaseSnap):
         """
         Step 2: Create joint between selected joint origin and component. 
         """
+        # Hotfix for releasing it from parent so that joint will work
+        self.occurrence.isGroundToParent = False
         offsets = self._get_offsets(parameters)
         joint_origin = self._create_joint_origin(*offsets)
         if target_joint_org:
