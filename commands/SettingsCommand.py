@@ -54,8 +54,13 @@ class InputHandler(adsk.core.InputChangedEventHandler):
 
         if input_command.id == "open_config_folder":
             try:
-                import os
-                os.startfile(str(configure.CONFIG_PATH))
+                import os, sys, platform, subprocess
+                if platform.system() == "Windows":
+                    os.startfile(str(configure.CONFIG_PATH))
+                elif sys.platform == "darwin":
+                    subprocess.call(["open", str(configure.CONFIG_PATH)])
+                else:
+                    print("Unsupported operating system.")
             except:
                 ui.messageBox(f"Error: {traceback.format_exc()}")
         elif input_command.id == "reset_all_profile_data":
