@@ -1,23 +1,29 @@
-# build.ps1
-# Prepares a clean build
-# - Clones the repo
-# - Renames files
-# - Removes dev and VCS files
+# Copies a new build into Fusion add-in folder.
 
 $manifest = Get-Content -Raw -Path ".\snap-generator.manifest" | ConvertFrom-Json
 $version = $manifest.version
-$source_repo = "."
 $name = "snap_generator_$version"
-$target_folder = "$name"
+
+$subject_folder = Join-Path $env:APPDATA "Autodesk\Autodesk Fusion 360\API\AddIns\$name"
+$target_folder = Join-Path $env:APPDATA "Autodesk\Autodesk Fusion 360\API\AddIns\$name"
+
+# Build, overwriting old if necesary
+.\build.ps1
 
 if (Test-Path -Path $target_folder) {
-    "Path already exists. Deleting all contents."
+    "Target path already exists. Deleting all contents. ($target_folder)"
     Remove-Item -Recurse -Force $target_folder
 }
-"Building ..."
-git clone --recurse-submodules --depth 1 $source_repo $target_folder
-Rename-Item -Path "$target_folder/snap_generator.py" "$name.py"
 
+# Copy the current directory to the target folder
+"Copying files ..."
+Copy-Item -Path . -Destination $target_folder -Recurse -Force
+
+# Rename the main script
+# Rename-Item -Path "$target_folder/snap_generator.py" "$target_folder/$name"
+Rename-Item -Path "$target_folder/snap_generator.py" "$target_folder/$name.py"
+
+# Remove unwanted files/folders as before
 $itemsToRemove = @(
     "$target_folder/create_release.ps1",
     "$target_folder/.git",
