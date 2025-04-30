@@ -9,3 +9,4 @@ testrun.ps1
  .idea\*
  .idea/*
 /todo
+snap_generator_*/
