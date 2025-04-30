@@ -3,7 +3,6 @@ import traceback
 import json
 import shutil
 from pathlib import Path
-from .lib import appdirs
 import shutil
 
 

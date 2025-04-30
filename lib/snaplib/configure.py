@@ -1,14 +1,8 @@
-import json
-import os
-import traceback
+import os, json, traceback
 
-from .. import appdirs
-
+# from .. import appdirs
 from pathlib import Path
-# from config import app_path
-
 import shutil
-config = None
 
 CONFIGURABLE_COMMANDS = ["Cantilever", "Pin"]
 
