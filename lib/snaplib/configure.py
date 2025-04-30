@@ -13,14 +13,15 @@ config = None
 CONFIGURABLE_COMMANDS = ["Cantilever", "Pin"]
 
 # Get config info from manifest file
-manifest_path = Path(__file__).parent.parent.parent / "snap-generator.manifest"
+app_path = Path(__file__).parent.parent.parent
+manifest_path = app_path / "snap-generator.manifest"
 with open(manifest_path, "r") as f:
     manifest = json.load(f)
 VERSION = manifest["version"]
 APPNAME = manifest["name"]
 
-CONFIG_PATH = Path(appdirs.user_config_dir(appname=APPNAME, version=VERSION))
-LOGS_PATH = Path(appdirs.user_log_dir(appname=APPNAME, version=VERSION))
+CONFIG_PATH = app_path / "config"
+LOGS_PATH = app_path / "logs"
 SETTINGS_PATH = CONFIG_PATH / "settings.json"
 
 # For debugging
