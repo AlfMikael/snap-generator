@@ -23,7 +23,6 @@ from ..lib.snaplib.control import value_input, JsonUpdater
 from ..lib.snaplib.control import ProfileSection, ProfileSettings, GapProfileSettings
 from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
 
-from ..lib import appdirs
 from ..lib.snaplib.configure import CONFIG_PATH
 from ..lib.snaplib import configure
 

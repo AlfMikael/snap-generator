@@ -15,7 +15,6 @@ from ..lib.snaplib.control import value_input, JsonUpdater
 from ..lib.snaplib.control import ProfileSettings, GapProfileSettings
 from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier, validate_json
 from ..lib.snaplib.control import ProfileException
-from ..lib import appdirs
 from ..lib.snaplib.configure import CONFIG_PATH
 from ..lib.snaplib import configure
 
