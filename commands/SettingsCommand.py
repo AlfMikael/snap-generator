@@ -31,7 +31,6 @@ class InputHandler(adsk.core.InputChangedEventHandler):
 
     def notify(self, args):
         input_command = args.input
-        settings = configure.get_settings()
 
         if input_command.id == "open_config_folder":
             try:
@@ -49,18 +48,9 @@ class InputHandler(adsk.core.InputChangedEventHandler):
             try:
                 configure.reset_all_profile_data()
             except:
-                logging.exception(f"Unable to reset all profile data.")
+                logging.exception("Unable to reset all profile data.")
                 ui.messageBox(f"Error: {traceback.format_exc()}")
-        elif input_command.id in settings["apps_enable"].keys():
-            try:
-                bool_value = input_command.value
-                settings["apps_enable"][input_command.id] = bool_value
-                # ui.messageBox(f"New settings:\n{settings}")
-                configure.dump_settings(settings)
-            except:
-                ui.messageBox(traceback.format_exc())
-        else:
-            ui.messageBox("settings:" f"{str(settings)}")
+
 
 
 class InputLimiter(adsk.core.ValidateInputsEventHandler):
@@ -131,51 +121,8 @@ class SettingsCommand(apper.Fusion360CommandBase):
         inputs = self.command.commandInputs
         feature_tab = inputs.addTabCommandInput('tab_1', 'Feature').children
 
-
-        # Intended for resetting settings, but seems pointless
-        # feature_tab.addBoolValueInput("reset_config", "Reset config", False, "", False)
-
         feature_tab.addBoolValueInput("open_config_folder", "Open config folder", False, "", False)
         feature_tab.addBoolValueInput("reset_all_profile_data", "Reset All Profile Data", False, "", False)
-
-
-        """ Active apps refer to the functions that are currently enabled in the dropdown menu."""
-        active_apps_group = feature_tab.addGroupCommandInput("active_apps",
-                                                             "Enable/Disable functions")
-        active_apps = active_apps_group.children
-        settings = configure.get_settings()
-
-        # Info text for enabling/disalbing functions
-        active_apps.addTextBoxCommandInput("text_above_app_choices",
-                                           "",
-                                           "Add-in must be stopped and restarted to take effect.",
-                                           1,
-                                           True)
-
-        """ This is purposely written explicitly instead of looping for clarity."""
-        # Simple Pin
-        key = "pin_simple_enabled"
-        value = settings["apps_enable"][key]
-        checkbox = active_apps.addBoolValueInput(key, "Simple Pin",  True)
-        checkbox.value = value
-
-        # Advanced Pin
-        key = "pin_advanced_enabled"
-        value = settings["apps_enable"][key]
-        checkbox = active_apps.addBoolValueInput(key, "Pin",  True)
-        checkbox.value = value
-
-        # Simple Cantilever
-        key = "cantilever_simple_enabled"
-        value = settings["apps_enable"][key]
-        checkbox = active_apps.addBoolValueInput(key, "Simple Cantilever",  True)
-        checkbox.value = value
-
-        # Advanced Cantilever
-        key = "cantilever_advanced_enabled"
-        value = settings["apps_enable"][key]
-        checkbox = active_apps.addBoolValueInput(key, "Cantilever",  True)
-        checkbox.value = value
 
     def add_handlers(self):
         cmd = self.command
