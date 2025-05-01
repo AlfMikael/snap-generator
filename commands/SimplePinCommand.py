@@ -507,7 +507,7 @@ class SimplePinCommand(apper.Fusion360CommandBase):
 
                 if not profile_path.is_file():
                     # Profile does not exist, recreate it from default
-                    configure.reset_single_profile_data("PinCommand")
+                    configure.reset_single_profile_data("Pin")
 
                 # Load profile data
                 with open(profile_path, "r") as f:
