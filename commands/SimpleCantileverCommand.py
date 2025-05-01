@@ -1,20 +1,18 @@
 import adsk.core
 import adsk.fusion
-import adsk.cam
 from adsk.core import SelectionCommandInput, DropDownStyles
 
 import traceback
 import json
+from pathlib import Path
 # import logging
 # import logging.handlers
-from pathlib import Path
 
 from ..apper import apper
 from ..lib.snaplib.geometry import Cantilever
 from ..lib.snaplib.control import value_input, JsonUpdater
-from ..lib.snaplib.control import ProfileSettings, GapProfileSettings
-from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier, validate_json
-from ..lib.snaplib.control import ProfileException
+from ..lib.snaplib.control import GapProfileSettings
+from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
 from ..lib.snaplib.configure import CONFIG_PATH
 from ..lib.snaplib import configure
 
@@ -33,21 +31,15 @@ DEFAULT_Y_POSITION = "top"
 
 def build(args, preview=False):
     try:
-        # logger = logging.getLogger("build-function")
-        # logger.debug("Build initiated.")
         design = adsk.fusion.Design.cast(app.activeProduct)
         rootComp = design.rootComponent
         inputs = args.command.commandInputs
 
         # Build parameters
-        parameter_ids = list(Cantilever.get_parameter_dict().keys())
         pos_parameters = ["x_location", "y_location"]
         parameters = {}
         parameters["x_location"] = DEFAULT_X_POSITION
         parameters["y_location"] = DEFAULT_Y_POSITION
-
-        # Extracting the value parameters from all parameters
-        value_parameters = list(set(parameter_ids) - set(pos_parameters))
 
         # Calculate parameters on the basis of size
         size = inputs.itemById("size").value
@@ -69,11 +61,7 @@ def build(args, preview=False):
                 position = inputs.itemById(par_id).selectedItem.name
                 parameters[par_id] = position
         except:
-            # logging.error(f"Something went wrong with creating"
-            #               f" parameter {par_id}")
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()) + f"\n{par_id=}")
-
-
 
         joint_origin = None
         joint_input = inputs.itemById("selected_origin")
@@ -113,16 +101,12 @@ def build(args, preview=False):
                                                             timeline_end-1)
         timeline_group.name = "Cantilever"
 
-        # logger.info(f"Build succeeded.")
-
     except:
         if ui:
-            # logger.error(f"BUILD FAILED!, traceback" + traceback.format_exc())
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 def mating_force(parameters):
-    # todo: Implement get_mating_force
     pass
 
 class InputLimiter(adsk.core.ValidateInputsEventHandler):
@@ -139,62 +123,7 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
         # self.logger = logging.getLogger("InputLimiter")
 
     def notify(self, args):
-        # Just passing here so that no code breaks
         pass
-
-        """ Below was removed 4/2/24 because it wasnot doing anything, yet logging."""
-        # try:
-        #     all_inputs = args.inputs
-        #
-        #     length = all_inputs.itemById("length").value
-        #     top_radius = all_inputs.itemById("top_radius").value
-        #     bottom_radius = all_inputs.itemById("bottom_radius").value
-        #     strain = all_inputs.itemById("strain").value
-        #     thickness = all_inputs.itemById("thickness").value
-        #     extrusion_distance = all_inputs.itemById("extrusion_distance").value
-        #     nose_angle = all_inputs.itemById("nose_angle").value
-        #     gap_extrusion = all_inputs.itemById("gap_extrusion").value
-        #     gap_length = all_inputs.itemById("gap_length").value
-        #     gap_thickness = all_inputs.itemById("gap_thickness").value
-        #     extra_length = all_inputs.itemById("extra_length").value
-        #
-        #     # First setting to False. If everything OK, setting to True at end
-        #     args.areInputsValid = False
-        #
-        #     if length < 0.48:
-        #         # self.logger.info("Input invalid because length is too small .")
-        #         pass
-        #     elif top_radius < 0:
-        #         # self.logger.info("Input invalid because top radius is negative.")
-        #         pass
-        #     elif top_radius >= length:
-        #         # self.logger.info("Input invalid because top radius is too big.")
-        #         pass
-        #     elif bottom_radius < 0:
-        #         # self.logger.info("Input invalid because bottom radius is negative.")
-        #         pass
-        #     elif bottom_radius >= length:
-        #         # self.logger.info("Input invalid because bottom radius is too big.")
-        #         pass
-        #     elif strain < 0:
-        #         # self.logger.info("Input invalid because strain is negative.")
-        #         pass
-        #     elif thickness <= 0:
-        #         # self.logger.info("Input invalid because thickness is too small.")
-        #         pass
-        #     elif extrusion_distance <= 0:
-        #         # self.logger.info("Input invalid because extrusion distance is "
-        #                          "too small.")
-        #     # elif nose_angle < 20:
-        #     #     self.logger.info("Input invalid because nose angle is too small.")
-        #     # elif extra_length < 0:
-        #     #     self.logger.info("Input invalid because extra length negative.")
-        #     # else:
-        #     #     args.areInputsValid = True
-        #     #     self.logger.debug("Inputs are acceptable.")
-        #
-        # except:
-        #     ui.messageBox(traceback.format_exc())
 
 class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
     """
@@ -203,10 +132,8 @@ class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
     """
     def __init__(self):
         super().__init__()
-        # self.logger = logging.getLogger(type(self).__name__)
 
     def notify(self, args):
-        # self.logger.debug("Triggered.")
         build(args, preview=True)
 
 class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
@@ -215,11 +142,8 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
     """
     def __init__(self):
         super().__init__()
-        # self.logger = logging.getLogger(type(self).__name__)
 
     def notify(self, args):
-        # self.logger.info("Ok-button clicked.")
-        # self.logger.debug("Triggered.")
         try:
             design = adsk.fusion.Design.cast(app.activeProduct)
             if design:
@@ -230,59 +154,69 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 
 
 class SimpleCantileverCommand(apper.Fusion360CommandBase):
-
     GEOMETRY_PARAMETERS = [
-        {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},
-        {"id": "bottom_radius", "display_text": "Bottom Radius", "units": "mm"},
-        {"id": "nose_angle", "display_text": "Nose angle", "units": ""},
-        {"id": "thickness", "display_text": "Thickness", "units": "mm"},
-        {"id": "length", "display_text": "Length", "units": "mm"},
-        {"id": "extrusion_distance", "display_text": "Extrusion distance",
-         "units": "mm"},
-        {"id": "strain", "display_text": "Strain", "units": ""},
-    ]
-    GAP_PARAMETERS = [
-        {"id": "width_gap", "display_text": "Thickness gap", "units": "mm"},
-        {"id": "extrusion_gap", "display_text": "Extrusion gap", "units": "mm"},
-        {"id": "length_gap", "display_text": "Length gap", "units": "mm"},
-        {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
+        {
+            "id": "top_radius",
+            "display_text": "Top Radius",
+            "units": "mm"
+        },
+        {
+            "id": "bottom_radius",
+            "display_text": "Bottom Radius",
+            "units": "mm"
+        },
+        {
+            "id": "nose_angle",
+            "display_text": "Nose angle",
+            "units": ""
+        },
+        {
+            "id": "thickness",
+            "display_text": "Thickness",
+            "units": "mm"
+        },
+        {
+            "id": "length",
+            "display_text": "Length",
+            "units": "mm"
+        },
+        {
+            "id": "extrusion_distance",
+            "display_text": "Extrusion distance",
+            "units": "mm"
+        },
+        {
+            "id": "strain",
+            "display_text": "Strain",
+            "units": ""
+        },
     ]
 
-    # Default data for JSON file if it doesn't exist
-    FALLBACK_JSON = {
-        "default_profile": "default",
-        "default_gap_profile": "default",
-        "profiles": {
-            "default": {
-                "top_radius": 0.15,
-                "bottom_radius": 0.1,
-                "thickness": 0.3,
-                "length": 1.2,
-                "extrusion_distance": 0.6,
-                "strain": 0.02,
-                "nose_angle": 70
-            }
+    GAP_PARAMETERS = [
+        {
+            "id": "width_gap",
+            "display_text": "Thickness gap",
+            "units": "mm"
         },
-        "gap_profiles": {
-            "default": {
-                "gap_thickness": 0.015,
-                "gap_length": 0.015,
-                "gap_extrusion": 0.015,
-                "extra_length": 0.06
-            }
-        }
-    }
+        {
+            "id": "extrusion_gap",
+            "display_text": "Extrusion gap",
+            "units": "mm"
+        },
+        {
+            "id": "length_gap",
+            "display_text": "Length gap",
+            "units": "mm"
+        },
+        {
+            "id": "extra_length",
+            "display_text": "Extra length",
+            "units": "mm"
+        },
+    ]
 
     def __init__(self, name: str, options: dict):
         super().__init__(name, options)
-
-        # Store logs and profile config in appropriate config folder.
-
-        #
-        # if not logs_folder.exists():
-        #     logs_folder.mkdir(parents=True)
-        # self.log_path = logs_folder / "CantileverCommand.log"
-
 
         # Loading references relative to this projects root
         self.profiles_path = CONFIG_PATH / "ProfileData" / "Cantilever.json"
@@ -295,7 +229,6 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
     def on_execute(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
                    args: adsk.core.CommandEventArgs, input_values: dict):
-
         try:
             myCmdDef = ui.commandDefinitions.itemById(
                 'SelectionEventsSample_Python')
@@ -303,11 +236,6 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
                 myCmdDef = ui.commandDefinitions.addButtonDefinition(
                     'SelectionEventsSample_Python',
                     'Create cantilever', '', '')
-
-            # # Connect to the command created event.
-            # onCommandCreated = MyCommandCreatedHandler()
-            # myCmdDef.commandCreated.add(onCommandCreated)
-            # handlers.append(onCommandCreated)
 
             # prevent this module from being terminateD when the script returns,
             # because we are waiting for event handlers to fire
@@ -323,30 +251,6 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
         self.command_definition.toolClipFilename = str(self.tool_clip_file_path)
 
     def on_create(self, command, inputs):
-        # Logging
-        # root_logger = logging.getLogger()
-        # root_logger.propagate = True
-        # Remove any loggers that aren't cleaned up.
-        # for handler in root_logger.handlers:
-        #     handler.close()
-            # root_logger.removeHandler(handler)
-
-        # Adding logging to the defined LOG_Path
-        # fh = logging.handlers.RotatingFileHandler(self.log_path, mode="a",
-        #                                           maxBytes=20000)
-        # self.file_handler = fh
-        # # fh.setLevel(logging.DEBUG)
-        #
-        # format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:'
-        #                            ' %(message)s',
-        #                            datefmt='%H:%M:%S')
-        # fh.setFormatter(format)
-        # fh.mode = "w"
-        # root_logger.addHandler(fh)
-
-        # Creating a specific logger for this class
-        # self.logger = logging.getLogger(type(self).__name__)
-
         # Connect to the command object
         self.command = command
 
@@ -357,17 +261,9 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
         self.command.isExecutedWhenPreEmpted = False
         self.profile_data: dict
 
-        # # Create JSON file if necessary
-        # if not self.profiles_path.is_file():
-        #     self.logger.info("No json file was found. Created a new,"
-        #                      " default file.")
-        #     with open(self.profiles_path, "w") as f:
-        #         json.dump(self.FALLBACK_JSON, f, indent=2)
-
         # Checking and fixing profile_data json
         # Also adding parent path if it somehow is missing
         profile_path = Path(self.profiles_path)
-        # IO stuff
 
         # Checking and fixing profile_data json
         # If parent folder somehow is missing, add it
@@ -382,43 +278,16 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
         # Load profile data
         with open(profile_path, "r") as f:
             self.profile_data = json.load(f)
-
-        # try:
-        #     validate_json(data, self.GEOMETRY_PARAMETERS, self.GAP_PARAMETERS)
-        # except ProfileException as e:
-        #     # self.logger.error(str(e))
-        #     error_message = "Error in config file that stores profiles" \
-        #                     f" and gap profiles: {str(e)}." \
-        #                     "\nEither repair, or delete it. If you delete it," \
-        #                     " a new one will be generated with default contents." \
-        #                     "It's path is\n" \
-        #                     fr"{self.profiles_path}"
-        #     ui.messageBox(error_message)
-
         self.createGUI()
-        # self.logger.debug("Finished GUI.")
-
         self.add_handlers()
-        # self.logger.debug("Finished handlers.")
-
-        # self.logger.info("Opened command window.")
 
     def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
                    reason: adsk.core.CommandTerminationReason, input_values: dict):
-
         pass
-        # self.logger.debug("onDestroy triggered.")
-        # self.logger.info("# Command Window closed.")
-        # Removing and closing all handlers
-        # root_logger = logging.getLogger()
-        # for handler in root_logger.handlers:
-        #     handler.close()
-        #     root_logger.removeHandler(handler)
 
     def on_preview(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
                    args: adsk.core.CommandEventArgs, input_values: dict):
-        # logging.debug("Preview triggered.")
         pass
 
     def createGUI(self):
@@ -549,9 +418,6 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
         prof_settings.add_to_inputs(gap_tab)
 
     def add_handlers(self):
-
-        app = adsk.core.Application.get()
-        ui = app.userInterface
         cmd = self.command
 
         # Connect to the command related events.
@@ -578,4 +444,3 @@ class SimpleCantileverCommand(apper.Fusion360CommandBase):
         input_limiter = InputLimiter()
         cmd.validateInputs.add(input_limiter)
         handlers.append(input_limiter)
-
