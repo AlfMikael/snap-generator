@@ -1,9 +1,3 @@
-{"apps_enable":
-  {
-    "cantilever_advanced_enabled": true,
-    "cantilever_simple_enabled": true,
-    "pin_simple_enabled": true,
-    "pin_advanced_enabled": true
-  }
+{
 }
 
