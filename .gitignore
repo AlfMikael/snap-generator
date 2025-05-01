@@ -3,10 +3,8 @@
 /log/CantileverCommand.log
 /profile_data/CantileverPinCommand.json
 /log/CantileverPinCommand.log
-/create_release.ps1
-testrun.ps1
 .idea
- .idea\*
- .idea/*
+.idea\*
+.idea/*
 /todo
 snap_generator_*/
