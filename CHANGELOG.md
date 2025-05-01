@@ -1,9 +1,14 @@
 # Changelog
 
-Notable changes to the project are documented here.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.4.0]
+- Added and improved build-scripts to make testing more efficient.
+- Changed location of config-files to the add-in folder #17.
+- Cleaned up some spagetti- and unused code.
+- Zero (gap) default profiles are now properly zero in all dimensions.
+- Fixed bug which which caused error on Mac #14.
+- Fixed various bugs that caused errors when trying to load config files.
+- Fixed README file. It now more accurately reflects the state of the project.
+- Changelog no longer follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [0.3.2]
 - The new Fusion update included the Ground to Parent feature. This is disabled to prevent it from interfering with creating joints.
@@ -52,6 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Everything around that is needed to implement these two features.
 
 
+[0.4.0]: https://github.com/AlfMikael/snap-generator/compare/0.3.2...0.4.0
+[0.3.2]: https://github.com/AlfMikael/snap-generator/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/AlfMikael/snap-generator/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/AlfMikael/snap-generator/compare/0.2.1...0.3.0
 [0.2.1]: https://github.com/AlfMikael/snap-generator/compare/0.2.0...0.2.1
