@@ -18,6 +18,7 @@ from ..apper import apper
 from ..lib.snaplib.geometry import Pin
 from ..lib.snaplib.control import value_input, JsonUpdater
 from ..lib.snaplib.control import GapProfileSettings
+from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
 from ..lib.snaplib.configure import CONFIG_PATH
 from ..lib.snaplib import configure
 
@@ -269,6 +270,7 @@ def size_parameters(size, length_width_ratio=1.6):
                        "wall_thickness": wall_thickness
                        }
     return advanced_params
+
 
 class SizeInputHandler(adsk.core.InputChangedEventHandler):
     """
@@ -522,3 +524,12 @@ class SimplePinCommand(apper.Fusion360CommandBase):
         j_updater = JsonUpdater(self.profile_data, self.profiles_path)
         cmd.inputChanged.add(j_updater)
         handlers.append(j_updater)
+
+        profile_switcher = ProfileSwitcher(self.profile_data)
+        cmd.inputChanged.add(profile_switcher)
+        handlers.append(profile_switcher)
+
+        profile_modifier = ProfileModifier(self.profile_data,
+                                           self.resources_path)
+        cmd.inputChanged.add(profile_modifier)
+        handlers.append(profile_modifier)
