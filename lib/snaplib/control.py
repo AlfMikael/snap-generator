@@ -7,24 +7,19 @@ by string id's, and the different geometry classes expect the same names.
 Because of that, it would be a good idea to define these names only once.
 """
 
-
 import json
 import traceback
 import logging
 from pathlib import Path
 
-# from .lib.snaplib.configure import config
-
-from adsk.core import CommandInputs, DropDownStyles
+from adsk.core import CommandInputs
 import adsk.core
-
 
 PROJECT_DIRECTORY = Path(__file__).parent.parent.parent
 COMMON_RESOURCES_FOLDER = PROJECT_DIRECTORY / "commands" / "resources" / "common"
 
 app = adsk.core.Application.get()
 ui = app.userInterface
-
 
 class ValueCommandSynchronizer(adsk.core.InputChangedEventHandler):
     """
@@ -49,14 +44,12 @@ class ValueCommandSynchronizer(adsk.core.InputChangedEventHandler):
             self.logger.debug(f"Trying to match {input.id} with {id_1}")
             if input.id == id_1:
                 self.logger.debug(f"Matched {id_1}, copying to {id_2}")
-                # value1 = all_inputs.itemById(id_1).value
                 all_inputs.itemById(id_2).value = input.value
                 return
 
             self.logger.debug(f"Trying to match {input.id} with {id_2}")
             if input.id == id_2:
                 self.logger.debug(f"Matched {id_2}, copying to {id_1}")
-                value2 = all_inputs.itemById(id_2).value
                 all_inputs.itemById(id_1).value = input.value
                 return
 
@@ -85,9 +78,8 @@ class ProfileModifier(adsk.core.InputChangedEventHandler):
         design = adsk.fusion.Design.cast(app.activeProduct)
         ui = app.userInterface
         try:
-            input = args.input  # The input obj that created event
+            input = args.input
             all_inputs = args.inputs.command.commandInputs
-            # ui.messageBox(input.id)
             # If a joint origin was selected:
             if input.id == "selected_origin":
                 pass
@@ -122,9 +114,6 @@ class ProfileModifier(adsk.core.InputChangedEventHandler):
                     # Display error message that profile already exists
                     error.isVisible = True
                 else:
-                    # value_fields = ["height", "length", "top_radius",
-                    #                 "bottom_radius", "strain",
-                    #                 "extrusion_distance"]
                     # Gets the first profile to extract the field_values
                     name = list(self.profile_data['profiles'])[0]
                     value_fields = (self.profile_data['profiles'][name]).keys()
@@ -306,9 +295,6 @@ class ProfileSwitcher(adsk.core.InputChangedEventHandler):
         :param args: This is an 'InputChangedEventArgs' object.
         :return:
         """
-        app = adsk.core.Application.get()
-        design = adsk.fusion.Design.cast(app.activeProduct)
-        ui = app.userInterface
         try:
             input = args.input  # The input obj that created event
             all_inputs = args.inputs.command.commandInputs
@@ -464,59 +450,6 @@ class GapProfileSettings:
         group2.addBoolValueInput("delete_gap_profile", "Delete", False)
 
 
-class ProfileSection:
-    """
-    This class is deprecated. It was previously used to create drop down lists
-    for choosing profile and gap profile in the feature tab.
-    """
-
-    def __init__(self, profile_data):
-
-        self.profile_data = profile_data
-
-    def add_to_inputs(self, inputs: CommandInputs):
-        inputs.addTextBoxCommandInput('profile_header', '',
-                                      'Profile' + " " * 26 + 'Gap Profile:',
-                                      1, True)
-        table = inputs.addTableCommandInput('profile_table', "Table", 1, "1:1")
-
-        tableInputs = CommandInputs.cast(table.commandInputs)
-
-        profile_list = tableInputs.addDropDownCommandInput("profile_list",
-                                                           "Profile",
-                                                           DropDownStyles.LabeledIconDropDownStyle)
-        profile_list.maxVisibleItems = 10  # Issue: The real maximum is 4
-        profile_list.isFullWidth = True
-        # profile_list.dropDownStyle = 0
-        gap_profiles = tableInputs.addDropDownCommandInput("gap_profiles",
-                                                           "Profile",
-                                                           DropDownStyles.LabeledIconDropDownStyle)
-        gap_profiles.maxVisibleItems = 10  # Issue: The real maximum is 4
-
-        table.addCommandInput(profile_list, 0, 0)
-        table.addCommandInput(gap_profiles, 0, 1)
-
-        # Populate profiles dropdown json data
-        items = profile_list.listItems
-
-        default_profile_name = self.profile_data['default_profile']
-        default_gap_profile_name = self.profile_data['default_gap_profile']
-        blank_icon_path = COMMON_RESOURCES_FOLDER / "white"
-        for key in self.profile_data['profiles']:
-            if key == default_profile_name:
-                items.add(key, True, str(blank_icon_path))
-            else:
-                items.add(key, False, str(blank_icon_path))
-
-        # Populate gap profiles dropdown from json data
-        items = gap_profiles.listItems
-        for key in self.profile_data['gap_profiles']:
-            if key == default_gap_profile_name:
-                items.add(key, True, str(blank_icon_path))
-            else:
-                items.add(key, False, str(blank_icon_path))
-
-
 class ProfileException(Exception):
     """
     This Exception is to be used when a user tries to do operations on
@@ -562,17 +495,33 @@ def validate_json(profile_data: dict, geometry_parameters: list,
         raise ProfileException(f"Error in top level JSON hierarchy of profile"
                                f" data.{top_keys} not equal to {correct_keys}")
 
-    try:
-        def_prof_name = profile_data["default_profile"]
-        default_profile = profile_data["profiles"][def_prof_name]
-    except KeyError:
-        raise ProfileException(f"No default profile defined.")
+    def_prof_name = profile_data.get("default_profile")
+    if def_prof_name is None:
+        raise ProfileException("No 'default_profile' key defined in profile data.")
 
-    try:
-        def_gap_prof_name = profile_data["default_gap_profile"]
-        default_profile = profile_data["gap_profiles"][def_gap_prof_name]
-    except KeyError:
-        raise ProfileException("No default gap profile defined.")
+    profiles = profile_data.get("profiles")
+    if profiles is None:
+        raise ProfileException("No 'profiles' key defined in profile data.")
+
+    default_profile = profiles.get(def_prof_name)
+    if default_profile is None:
+        raise ProfileException(
+            f"Default profile '{def_prof_name}' not found in profiles."
+        )
+
+    def_gap_prof_name = profile_data.get("default_gap_profile")
+    if def_gap_prof_name is None:
+        raise ProfileException("No 'default_gap_profile' key defined in profile data.")
+
+    gap_profiles = profile_data.get("gap_profiles")
+    if gap_profiles is None:
+        raise ProfileException("No 'gap_profiles' key defined in profile data.")
+
+    default_profile = gap_profiles.get(def_gap_prof_name)
+    if default_profile is None:
+        raise ProfileException(
+            f"Default gap profile '{def_gap_prof_name}' not found in 'gap_profiles'."
+        )
 
     allowed_types = (int, float)
     for prof_name, profile in profile_data["profiles"].items():
