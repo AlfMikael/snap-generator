@@ -29,7 +29,9 @@ $itemsToRemove = @(
     "$target_folder/apper/.git",
     "$target_folder/apper/docs",
     "$target_folder/build.ps1",
+    "$target_folder/build-to-fusion.ps1",
     "$target_folder/copy-to-fusion.ps1"
+
 )
 
 foreach ($item in $itemsToRemove) {
