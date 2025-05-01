@@ -2,12 +2,10 @@
 
 import adsk.core
 import adsk.fusion
-import adsk.cam
 import math
 import logging
 from adsk.core import ValueInput as valueInput
 from adsk.fusion import Component
-
 
 app = adsk.core.Application.get()
 ui = app.userInterface
@@ -15,6 +13,32 @@ ui = app.userInterface
 class BaseSnap:
     component_name = "snap_mechanism"
     gap_in_cut_body = True
+
+    @staticmethod
+    def get_parameter_dict():
+        """
+        Implement in subclass to define appropriate parameters.
+        :return:
+        """
+        return dict()
+
+    @staticmethod
+    def mirror_points(pointlist, axis):
+        """
+        Mirrors the list of points across either the x or y axis.
+        :param pointlist:
+        :param axis: "x" or "y"
+        :return:
+        """
+        newlist = []
+        for pair in pointlist:
+            (x, y) = pair
+            if axis == "x":
+                x *= -1
+            elif axis == "y":
+                y *= -1
+            newlist.append((x, y))
+        return newlist
 
     def __init__(self, parent_comp: Component, parameters: dict,
                  target_joint_org=None, join_body=None, cut_bodies=tuple()):
@@ -267,6 +291,11 @@ class BaseSnap:
         """
         return (0, 0, 0)
 
+
+class ExperimentalBaseSnap:
+    component_name = "snap_mechanism"
+    gap_in_cut_body = True
+
     @staticmethod
     def get_parameter_dict():
         """
@@ -292,11 +321,6 @@ class BaseSnap:
                 y *= -1
             newlist.append((x, y))
         return newlist
-
-
-class ExperimentalBaseSnap:
-    component_name = "snap_mechanism"
-    gap_in_cut_body = True
 
     def __init__(self, parent_comp: Component, parameters: dict,
                  target_joint_org=None, join_body=None, cut_bodies=tuple()):
@@ -567,36 +591,29 @@ class ExperimentalBaseSnap:
         """
         return (0, 0, 0)
 
-    @staticmethod
-    def get_parameter_dict():
-        """
-        Implement in subclass to define appropriate parameters.
-        :return:
-        """
-        return dict()
-
-    @staticmethod
-    def mirror_points(pointlist, axis):
-        """
-        Mirrors the list of points across either the x or y axis.
-        :param pointlist:
-        :param axis: "x" or "y"
-        :return:
-        """
-        newlist = []
-        for pair in pointlist:
-            (x, y) = pair
-            if axis == "x":
-                x *= -1
-            elif axis == "y":
-                y *= -1
-            newlist.append((x, y))
-        return newlist
-
 
 class Cantilever(BaseSnap):
-
     component_name = "Cantilever"
+
+    @staticmethod
+    def get_parameter_dict():
+        PARAMETERS = {
+            "top_radius": (float, int),
+            "strain": (float, int),
+            "extrusion_distance": (float, int),
+            "thickness": (float, int),
+            # "wall_thickness": (float, int),
+            "length": (float, int),
+            "nose_angle": (float, int),
+            "length_gap": (float, int),
+            "width_gap": (float, int),
+            "extrusion_gap": (float, int),
+            "extra_length": (float, int),
+            "x_location": (str,),
+            "y_location": (str,)
+        }
+        return PARAMETERS
+
 
     def _sketch_join_properties(self, parameters):
         # Parameters for drawing the profile
@@ -695,25 +712,6 @@ class Cantilever(BaseSnap):
                 }
         return data
 
-    @staticmethod
-    def get_parameter_dict():
-        PARAMETERS = {
-            "top_radius": (float, int),
-            "strain": (float, int),
-            "extrusion_distance": (float, int),
-            "thickness": (float, int),
-            # "wall_thickness": (float, int),
-            "length": (float, int),
-            "nose_angle": (float, int),
-            "length_gap": (float, int),
-            "width_gap": (float, int),
-            "extrusion_gap": (float, int),
-            "extra_length": (float, int),
-            "x_location": (str,),
-            "y_location": (str,)
-        }
-        return PARAMETERS
-
     def _get_offsets(self, parameters):
         ex_dist = parameters['extrusion_distance']
         # todo: Remmove bot_rad
@@ -749,6 +747,28 @@ class Pin(ExperimentalBaseSnap):
     component_name = "Snap pin"
     gap_in_cut_body = False
 
+    @staticmethod
+    def get_parameter_dict():
+        PARAMETERS = {
+            "strain": (float, int),
+            "pin_prestrain": (float, int),
+            "extrusion_distance": (float, int),
+            "thickness": (float, int),
+            "wall_thickness": (float, int),
+            "length": (float, int),
+            "width": (float, int),
+            "ledge": (float, int),
+            "middle_padding": (float, int),
+            "nose_angle": (float, int),
+            "length_gap": (float, int),
+            "width_gap": (float, int),
+            "extrusion_gap": (float, int),
+            "extra_length": (float, int),
+            "x_location": (str,),
+            "y_location": (str,),
+            "gap_buffer": (float, int)
+        }
+        return PARAMETERS
 
     def __init__(self, parent_comp: Component, parameters: dict,
                  target_joint_org=None, target_body1=None, target_body2=None):
@@ -861,10 +881,6 @@ class Pin(ExperimentalBaseSnap):
         # # Cut into the addition body
         # addition_bodies = [self.addition_body1, self.addition_body2]
 
-
-
-
-
     def _sketch_join_properties(self, parameters):
         t = parameters['thickness']
         # wt = parameters["wall_thickness"]
@@ -969,7 +985,6 @@ class Pin(ExperimentalBaseSnap):
                 "arc_lines": arcs}
         return data
 
-
     def _create_addition_body(self, parameters, sketch):
         total_distance = parameters['extrusion_distance'] + 2*parameters["wall_thickness"]
 
@@ -995,7 +1010,6 @@ class Pin(ExperimentalBaseSnap):
         body = extrusion.bodies.item(0)
 
         return body
-
 
     def _sketch_addition_properties(self, parameters):
         """ Specifies a volume around the pin cutout, so that the pin gains the necessary support.
@@ -1073,7 +1087,6 @@ class Pin(ExperimentalBaseSnap):
                 "arc_lines": arc_lines}
         return data
 
-
     def _sketch_cut_properties(self, parameters):
         th = parameters['thickness']
         fl = parameters['length']
@@ -1145,7 +1158,6 @@ class Pin(ExperimentalBaseSnap):
                 "arc_lines": arc_lines}
         return data
 
-
     def _draw_sketch(self, sketch, sketch_data):
         points_coordinates = sketch_data['points_coordinates']
         point_pair_indexes = sketch_data['point_pair_indexes']
@@ -1186,29 +1198,6 @@ class Pin(ExperimentalBaseSnap):
             #                                                      alongPoint,
             #                                                      endPoint)
 
-
-    @staticmethod
-    def get_parameter_dict():
-        PARAMETERS = {
-            "strain": (float, int),
-            "pin_prestrain": (float, int),
-            "extrusion_distance": (float, int),
-            "thickness": (float, int),
-            "wall_thickness": (float, int),
-            "length": (float, int),
-            "width": (float, int),
-            "ledge": (float, int),
-            "middle_padding": (float, int),
-            "nose_angle": (float, int),
-            "length_gap": (float, int),
-            "width_gap": (float, int),
-            "extrusion_gap": (float, int),
-            "extra_length": (float, int),
-            "x_location": (str,),
-            "y_location": (str,),
-            "gap_buffer": (float, int)
-        }
-        return PARAMETERS
 
     def _get_offsets(self, parameters):
         """
