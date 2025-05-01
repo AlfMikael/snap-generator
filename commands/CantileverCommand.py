@@ -1,23 +1,19 @@
 import adsk.core
 import adsk.fusion
-import adsk.cam
 from adsk.core import SelectionCommandInput, DropDownStyles
 
 import traceback
 import json
+from pathlib import Path
 # import logging
 # import logging.handlers
-from pathlib import Path
 
 from ..apper import apper
 from ..lib.snaplib.geometry import Cantilever
 from ..lib.snaplib.control import value_input, JsonUpdater
 from ..lib.snaplib.control import ProfileSettings, GapProfileSettings
-from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier, validate_json
-from ..lib.snaplib.control import ProfileException
+from ..lib.snaplib.control import ProfileSwitcher, ProfileModifier
 from ..lib.snaplib.configure import CONFIG_PATH
-
-
 from ..lib.snaplib import configure
 
 # Dirty hack to get a value from the way pin shape is calculated
@@ -43,7 +39,6 @@ def build(args, preview=False):
         pos_parameters = ["x_location", "y_location"]
         parameters = {}
 
-
         # Extracting the value parameters from all parameters
         value_parameters = list(set(parameter_ids) - set(pos_parameters))
         # value_parameters.remove("size")
@@ -57,7 +52,7 @@ def build(args, preview=False):
         except:
             # logger.error(f"Something went wrong with creating"
             #               f" parameter {par_id}")
-            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()) + f"{par_id}")
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
         joint_origin = None
         joint_input = inputs.itemById("selected_origin")
@@ -133,38 +128,30 @@ def size_parameters(size, length_width_ratio=1.6):
     extrusion_distance = size
     length = size * length_width_ratio
     top_radius = 0
-    gap_buffer = 0
     if 0 < size <= 0.3:
         top_radius = 0.03
     elif 0.3 < size <= 1:
-        # top_radius = 0.03 + (size - 0.3) / 6
         top_radius = 0.03 + 0.12*(size - 0.3) / 0.7
     elif 1 <= size :
         top_radius = 0.15
-    #
-    #     top_radius = 0.05 + (size - 0.3) / 12
-    # elif 1.5 <= size:
-    #     top_radius = 0.15
 
     # Dirty hack to copy the thickness from pin
     pin_values = pin_size_parameters(size, length_width_ratio)
     thickness = pin_values["thickness"]
 
-
     thickness = round(thickness, 4)
     top_radius = round(top_radius, 4)
 
-    advanced_params = { #"width": width,
-                       "length": length,
-                       "extrusion_distance": extrusion_distance,
-                       "top_radius": top_radius,
-                       "thickness": thickness,
-                       }
+    advanced_params = { 
+        "length": length,
+        "extrusion_distance": extrusion_distance,
+        "top_radius": top_radius,
+        "thickness": thickness,
+    }
 
     # logger.debug(f"Size={round(size*10, 5)}mm.\tRadius={round(inner_radius*10, 5)}mm\t"
     #              f"Gap buffer={round(gap_buffer*10, 5)}mm")
     return advanced_params
-
 
 
 class SizeInputHandler(adsk.core.InputChangedEventHandler):
@@ -205,65 +192,9 @@ class InputLimiter(adsk.core.ValidateInputsEventHandler):
     """
     def __init__(self):
         super().__init__()
-        # self.logger = logging.getLogger("InputLimiter")
-
+        
     def notify(self, args):
-        # Just passing here so that no code breaks
         pass
-
-        """ Below was removed 4/2/24 because it wasnot doing anything, yet logging."""
-        # try:
-        #     all_inputs = args.inputs
-        #
-        #     length = all_inputs.itemById("length").value
-        #     top_radius = all_inputs.itemById("top_radius").value
-        #     bottom_radius = all_inputs.itemById("bottom_radius").value
-        #     strain = all_inputs.itemById("strain").value
-        #     thickness = all_inputs.itemById("thickness").value
-        #     extrusion_distance = all_inputs.itemById("extrusion_distance").value
-        #     nose_angle = all_inputs.itemById("nose_angle").value
-        #     gap_extrusion = all_inputs.itemById("gap_extrusion").value
-        #     gap_length = all_inputs.itemById("gap_length").value
-        #     gap_thickness = all_inputs.itemById("gap_thickness").value
-        #     extra_length = all_inputs.itemById("extra_length").value
-        #
-        #     # First setting to False. If everything OK, setting to True at end
-        #     args.areInputsValid = False
-        #
-        #     if length < 0.48:
-        #         # self.logger.info("Input invalid because length is too small .")
-        #         pass
-        #     elif top_radius < 0:
-        #         # self.logger.info("Input invalid because top radius is negative.")
-        #         pass
-        #     elif top_radius >= length:
-        #         # self.logger.info("Input invalid because top radius is too big.")
-        #         pass
-        #     elif bottom_radius < 0:
-        #         # self.logger.info("Input invalid because bottom radius is negative.")
-        #         pass
-        #     elif bottom_radius >= length:
-        #         # self.logger.info("Input invalid because bottom radius is too big.")
-        #         pass
-        #     elif strain < 0:
-        #         # self.logger.info("Input invalid because strain is negative.")
-        #         pass
-        #     elif thickness <= 0:
-        #         # self.logger.info("Input invalid because thickness is too small.")
-        #         pass
-        #     elif extrusion_distance <= 0:
-        #         # self.logger.info("Input invalid because extrusion distance is "
-        #                          "too small.")
-        #     # elif nose_angle < 20:
-        #     #     self.logger.info("Input invalid because nose angle is too small.")
-        #     # elif extra_length < 0:
-        #     #     self.logger.info("Input invalid because extra length negative.")
-        #     # else:
-        #     #     args.areInputsValid = True
-        #     #     self.logger.debug("Inputs are acceptable.")
-        #
-        # except:
-        #     ui.messageBox(traceback.format_exc())
 
 
 class MyCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
@@ -303,20 +234,61 @@ class MyCommandExecuteHandler(adsk.core.CommandEventHandler):
 class CantileverCommand(apper.Fusion360CommandBase):
 
     GEOMETRY_PARAMETERS = [
-        {"id": "top_radius", "display_text": "Top Radius", "units": "mm"},
-        {"id": "nose_angle", "display_text": "Nose angle", "units": ""},
-        {"id": "thickness", "display_text": "Thickness", "units": "mm"},
-        {"id": "length", "display_text": "Length", "units": "mm"},
-        {"id": "extrusion_distance", "display_text": "Extrusion distance",
-         "units": "mm"},
-        {"id": "strain", "display_text": "Strain", "units": ""},
+        {
+            "id": "top_radius",
+            "display_text": "Top Radius",
+            "units": "mm"
+        },
+        {
+            "id": "nose_angle",
+            "display_text": "Nose angle",
+            "units": ""
+        },
+        {
+            "id": "thickness",
+            "display_text": "Thickness",
+            "units": "mm"
+        },
+        {
+            "id": "length",
+            "display_text": "Length",
+            "units": "mm"
+        },
+        {
+            "id": "extrusion_distance",
+            "display_text": "Extrusion distance",
+            "units": "mm"
+        },
+        {
+            "id": "strain",
+            "display_text": "Strain",
+            "units": ""
+        },
     ]
+
     GAP_PARAMETERS = [
-        {"id": "width_gap", "display_text": "Thickness gap", "units": "mm"},
-        {"id": "extrusion_gap", "display_text": "Extrusion gap", "units": "mm"},
-        {"id": "length_gap", "display_text": "Length gap", "units": "mm"},
-        {"id": "extra_length", "display_text": "Extra length", "units": "mm"}
+        {
+            "id": "width_gap",
+            "display_text": "Thickness gap",
+            "units": "mm"
+        },
+        {
+            "id": "extrusion_gap",
+            "display_text": "Extrusion gap",
+            "units": "mm"
+        },
+        {
+            "id": "length_gap",
+            "display_text": "Length gap",
+            "units": "mm"
+        },
+        {
+            "id": "extra_length",
+            "display_text": "Extra length",
+            "units": "mm"
+        },
     ]
+
 
     def __init__(self, name: str, options: dict):
         super().__init__(name, options)
@@ -350,10 +322,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
                     'SelectionEventsSample_Python',
                     'Create cantilever', '', '')
 
-            # # Connect to the command created event.
-            # onCommandCreated = MyCommandCreatedHandler()
-            # myCmdDef.commandCreated.add(onCommandCreated)
-            # handlers.append(onCommandCreated)
 
             # prevent this module from being terminateD when the script returns,
             # because we are waiting for event handlers to fire
@@ -403,16 +371,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
         self.command.isExecutedWhenPreEmpted = False
         self.profile_data: dict
 
-        # # Create JSON file if necessary
-        # if not self.profiles_path.is_file():
-        #     self.logger.info("No json file was found. Created a new,"
-        #                      " default file.")
-        #     with open(self.profiles_path, "w") as f:
-        #         json.dump(self.FALLBACK_JSON, f, indent=2)
-
-        # Checking and fixing profile_data json
-        # Also adding parent path if it somehow is missing
-
         profile_path = Path(self.profiles_path)
         # IO stuff
         try:
@@ -432,43 +390,19 @@ class CantileverCommand(apper.Fusion360CommandBase):
         except:
             ui.messageBox(traceback.format_exc())
 
-
-        # try:
-        #     validate_json(data, self.GEOMETRY_PARAMETERS, self.GAP_PARAMETERS)
-        # except ProfileException as e:
-        #     # self.logger.error(str(e))
-        #     error_message = "Error in config file that stores profiles" \
-        #                     f" and gap profiles: {str(e)}." \
-        #                     "\nEither repair, or delete it. If you delete it," \
-        #                     " a new one will be generated with default contents." \
-        #                     "It's path is\n" \
-        #                     fr"{self.profiles_path}"
-        #     ui.messageBox(error_message)
-
         self.createGUI()
         # self.logger.debug("Finished GUI.")
 
         self.add_handlers()
         # self.logger.debug("Finished handlers.")
 
-        # self.logger.info("Opened command window.")
-
     def on_destroy(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs,
                    reason: adsk.core.CommandTerminationReason, input_values: dict):
-
         pass
-        # self.logger.debug("onDestroy triggered.")
-        # self.logger.info("# Command Window closed.")
-        # Removing and closing all handlers
-        # root_logger = logging.getLogger()
-        # for handler in root_logger.handlers:
-        #     handler.close()
-        #     root_logger.removeHandler(handler)
 
     def on_preview(self, command: adsk.core.Command,
                    inputs: adsk.core.CommandInputs,
                    args: adsk.core.CommandEventArgs, input_values: dict):
-        # logging.debug("Preview triggered.")
         pass
 
     def createGUI(self):
@@ -504,16 +438,12 @@ class CantileverCommand(apper.Fusion360CommandBase):
         geo_list.addValueInput("size", "SIZE", "mm", size_value)
 
         profile = self.profile_data["profiles"][default_profile_name]
-        # tooltip_path = self.RESOURCE_FOLDER / "dimension illustration.png"
-        # joint_choice.toolClipFilename = str(x_tooltip_path)
         for geo_par in self.GEOMETRY_PARAMETERS:
             geo_id = geo_par["id"]
             display_text = geo_par["display_text"]
             unit = geo_par["units"]
             value = value_input(profile[geo_id])
-            input = geo_list.addValueInput(geo_id, display_text, unit, value)
-            # input.tooltip = "hey"
-            # input.toolClipFilename = str(tooltip_path)
+            geo_list.addValueInput(geo_id, display_text, unit, value)
 
         # Gap section
         gap_group = feature_tab.addGroupCommandInput("gaps", "Gaps")
@@ -539,7 +469,7 @@ class CantileverCommand(apper.Fusion360CommandBase):
             unit = gap_par["units"]
             value = value_input(gap_profile[geo_id])
             gap_list.addValueInput(geo_id, display_text, unit, value)
-
+           
         # Selection section
         selections_group = feature_tab.addGroupCommandInput("selections",
                                                             "Selections")
@@ -634,9 +564,6 @@ class CantileverCommand(apper.Fusion360CommandBase):
         prof_settings.add_to_inputs(gap_tab)
 
     def add_handlers(self):
-
-        app = adsk.core.Application.get()
-        ui = app.userInterface
         cmd = self.command
 
         # Connect to the command related events.
@@ -667,4 +594,3 @@ class CantileverCommand(apper.Fusion360CommandBase):
         input_limiter = InputLimiter()
         cmd.validateInputs.add(input_limiter)
         handlers.append(input_limiter)
-
