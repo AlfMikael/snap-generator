@@ -17,7 +17,7 @@ if (Test-Path -Path $target_folder) {
 "Building ..."
 git clone --recurse-submodules --depth 1 $source_repo $target_folder
 Rename-Item -Path "$target_folder/snap_generator.py" "$name.py"
-Rename-Item -Path "$target_folder/snap_generator.manifest" "$target_folder/$name.manifest"
+Rename-Item -Path "$target_folder/snap_generator.manifest" "$name.manifest"
 
 $itemsToRemove = @(
     "$target_folder/create_release.ps1",
@@ -40,3 +40,4 @@ foreach ($item in $itemsToRemove) {
         Remove-Item -Recurse -Force $item
     }
 }
+"Build finished!"

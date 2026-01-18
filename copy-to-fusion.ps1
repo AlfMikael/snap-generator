@@ -1,7 +1,7 @@
 # Copies the project in it's current state into the fusion add-in folder.
 # Useful for testing during development.
 
-$manifest = Get-Content -Raw -Path ".\snap-generator.manifest" | ConvertFrom-Json
+$manifest = Get-Content -Raw -Path ".\snap_generator.manifest" | ConvertFrom-Json -AsHashtable
 $version = $manifest.version
 $name = "snap_generator_$version"
 $target_folder = Join-Path $env:APPDATA "Autodesk\Autodesk Fusion 360\API\AddIns\$name"
@@ -18,6 +18,7 @@ Copy-Item -Path . -Destination $target_folder -Recurse -Force
 # Rename the main script
 # Rename-Item -Path "$target_folder/snap_generator.py" "$target_folder/$name"
 Rename-Item -Path "$target_folder/snap_generator.py" "$target_folder/$name.py"
+Rename-Item -Path "$target_folder/snap_generator.manifest" "$target_folder/$name.manifest"
 
 # Remove unwanted files/folders as before
 $itemsToRemove = @(
