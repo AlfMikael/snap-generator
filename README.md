@@ -9,7 +9,7 @@ with existing CAD bodies in a simple and convenient way.
 
 Installation
 ----
-[Download latest release](https://github.com/AlfMikael/snap-generator/releases/download/0.4.0/snap_generator_0.4.0.zip).
+[Download latest release](https://github.com/AlfMikael/snap-generator/releases/download/0.4.1/snap_generator_0.4.1.zip).
 Unzip and paste the unzipped folder into the Fusion 360 add-ins folder (see below). **Do not change the name of the folder.** If you do, Fusion will not identify it as an add-in. It should be named "snap_generator_0.4.0" (or some different version).
 
 Add-in folder for **Windows**:
