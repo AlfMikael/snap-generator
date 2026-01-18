@@ -4,7 +4,7 @@
 # - Renames files
 # - Removes dev and VCS files
 
-$manifest = Get-Content -Raw -Path ".\snap-generator.manifest" | ConvertFrom-Json
+$manifest = Get-Content -Raw -Path ".\snap_generator.manifest" | ConvertFrom-Json -AsHashtable
 $version = $manifest.version
 $source_repo = "."
 $name = "snap_generator_$version"
@@ -17,6 +17,7 @@ if (Test-Path -Path $target_folder) {
 "Building ..."
 git clone --recurse-submodules --depth 1 $source_repo $target_folder
 Rename-Item -Path "$target_folder/snap_generator.py" "$name.py"
+Rename-Item -Path "$target_folder/snap_generator.manifest" "$target_folder/$name.manifest"
 
 $itemsToRemove = @(
     "$target_folder/create_release.ps1",
