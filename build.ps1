@@ -1,23 +1,23 @@
 # build.ps1
 # Prepares a clean build
 # - Clones the repo
-# - Renames files
+# - Packages the add-in in a stable folder
 # - Removes dev and VCS files
 
-$manifest = Get-Content -Raw -Path ".\snap_generator.manifest" | ConvertFrom-Json -AsHashtable
-$version = $manifest.version
 $source_repo = "."
-$name = "snap_generator_$version"
-$target_folder = "$name"
+$name = "snap_generator"
+$target_folder = Join-Path "dist" $name
 
 if (Test-Path -Path $target_folder) {
     "Path already exists. Deleting all contents."
     Remove-Item -Recurse -Force $target_folder
 }
 "Building ..."
-git clone --recurse-submodules --depth 1 $source_repo $target_folder
-Rename-Item -Path "$target_folder/snap_generator.py" "$name.py"
-Rename-Item -Path "$target_folder/snap_generator.manifest" "$name.manifest"
+git clone --recurse-submodules $source_repo $target_folder
+if ($LASTEXITCODE -ne 0) { throw "Could not clone the add-in and its submodules." }
+$manifest = Get-Content -Raw "$target_folder/snap_generator.manifest" | ConvertFrom-Json -AsHashtable
+$version = $manifest.version
+$archive = Join-Path "dist" "${name}_$version.zip"
 
 $itemsToRemove = @(
     "$target_folder/create_release.ps1",
@@ -40,4 +40,5 @@ foreach ($item in $itemsToRemove) {
         Remove-Item -Recurse -Force $item
     }
 }
-"Build finished!"
+Compress-Archive -Path $target_folder -DestinationPath $archive -Force -ErrorAction Stop
+"Built $archive"
