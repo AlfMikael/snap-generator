@@ -9,8 +9,8 @@ with existing CAD bodies in a simple and convenient way.
 
 Installation
 ----
-[Download latest release](https://github.com/AlfMikael/snap-generator/releases/download/0.4.1/snap_generator_0.4.1.zip).
-Unzip and paste the unzipped folder into the Fusion 360 add-ins folder (see below). **Do not change the name of the folder.** If you do, Fusion will not identify it as an add-in. It should be named "snap_generator_0.4.0" (or some different version).
+Download the `snap_generator_<version>.zip` asset from the [latest release](https://github.com/AlfMikael/snap-generator/releases/latest).
+Extract the add-in folder into the Fusion add-ins directory below, keeping its name. Older releases use a versioned folder such as `snap_generator_0.4.1`. Stop and disable the old entry in Scripts and Add-Ins before starting its replacement.
 
 Add-in folder for **Windows**:
 
@@ -23,14 +23,16 @@ __~/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns__
 Once the folder is in place, make sure you are in the the DESIGN workspace and click on the UTILITIES. Here you will find a button for "ADD-INS". Clicking it opens up the "Scripts and Add-Ins" window. In this window, click the "Add-Ins" tab, find the name
 in the list, and click _run_.
 
-*Warning: If you already have an old version running
-this needs to be stopped, as the different versions may interfere with each other.*
-
 ![Add-ins](docs/images/add-ins_menu.png)
 
 
 "Snap Generator" should now appear in the SOLID tab, under _CREATE_.
 ![Position](docs/images/snap_generator_in_menu.png)
+
+Building a release
+----
+
+Set the version in `snap_generator.manifest` and commit the change, keeping the same add-in ID for future updates. Run `./build.ps1` with PowerShell from the repository root and attach `dist/snap_generator_<version>.zip` to the matching GitHub release. The archive contains the `snap_generator/` folder and its runtime dependencies.
 
 Usage
 ----
